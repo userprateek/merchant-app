@@ -37,7 +37,7 @@ export default function ProductList(Props: Props) {
             <td>{product.name}</td>
             <td>{product.sku}</td>
             <td>₹{product.basePrice}</td>
-            <td>{product.quantity}</td>
+            <td>{product.totalStock}</td>
             <td>{product.status}</td>
 
             {/* Channel Cells */}

@@ -1,11 +1,26 @@
+-- CreateEnum
+CREATE TYPE "ProductStatus" AS ENUM ('ACTIVE', 'INACTIVE');
+
+-- CreateEnum
+CREATE TYPE "ListingStatus" AS ENUM ('LISTED', 'DELISTED', 'SUSPENDED');
+
+-- CreateEnum
+CREATE TYPE "OrderStatus" AS ENUM ('CREATED', 'CONFIRMED', 'PACKED', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'RETURNED');
+
+-- CreateEnum
+CREATE TYPE "OversellPolicy" AS ENUM ('REJECT', 'ALLOW', 'LIMITED');
+
 -- CreateTable
 CREATE TABLE "Product" (
     "id" TEXT NOT NULL,
     "sku" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "basePrice" DOUBLE PRECISION NOT NULL,
-    "quantity" INTEGER NOT NULL,
-    "status" TEXT NOT NULL,
+    "totalStock" INTEGER NOT NULL,
+    "reservedStock" INTEGER NOT NULL DEFAULT 0,
+    "oversellPolicy" "OversellPolicy" NOT NULL DEFAULT 'REJECT',
+    "oversellLimit" INTEGER,
+    "status" "ProductStatus" NOT NULL DEFAULT 'ACTIVE',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -16,6 +31,13 @@ CREATE TABLE "Product" (
 CREATE TABLE "Channel" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
+    "baseUrl" TEXT,
+    "apiKey" TEXT,
+    "apiSecret" TEXT,
+    "accessToken" TEXT,
+    "webhookSecret" TEXT,
+    "isEnabled" BOOLEAN NOT NULL DEFAULT false,
+    "isSandbox" BOOLEAN NOT NULL DEFAULT true,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Channel_pkey" PRIMARY KEY ("id")
@@ -32,7 +54,7 @@ CREATE TABLE "ChannelListing" (
     "discountAmount" DOUBLE PRECISION,
     "markupAmount" DOUBLE PRECISION,
     "followsBasePrice" BOOLEAN NOT NULL DEFAULT true,
-    "listingStatus" TEXT NOT NULL,
+    "listingStatus" "ListingStatus" NOT NULL DEFAULT 'DELISTED',
     "syncedAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -44,8 +66,8 @@ CREATE TABLE "ChannelListing" (
 CREATE TABLE "ChannelListingHistory" (
     "id" TEXT NOT NULL,
     "channelListingId" TEXT NOT NULL,
-    "previousStatus" TEXT,
-    "newStatus" TEXT NOT NULL,
+    "previousStatus" "ListingStatus",
+    "newStatus" "ListingStatus" NOT NULL,
     "reason" TEXT,
     "changedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -60,8 +82,8 @@ CREATE TABLE "Order" (
     "totalAmount" DOUBLE PRECISION NOT NULL,
     "discountAmount" DOUBLE PRECISION,
     "offerCode" TEXT,
-    "status" TEXT NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL,
+    "status" "OrderStatus" NOT NULL DEFAULT 'CREATED',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Order_pkey" PRIMARY KEY ("id")
@@ -77,6 +99,19 @@ CREATE TABLE "OrderItem" (
     "totalPrice" DOUBLE PRECISION NOT NULL,
 
     CONSTRAINT "OrderItem_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "IntegrationLog" (
+    "id" TEXT NOT NULL,
+    "channelId" TEXT NOT NULL,
+    "eventType" TEXT NOT NULL,
+    "payload" JSONB NOT NULL,
+    "response" JSONB,
+    "status" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "IntegrationLog_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -108,3 +143,6 @@ ALTER TABLE "OrderItem" ADD CONSTRAINT "OrderItem_orderId_fkey" FOREIGN KEY ("or
 
 -- AddForeignKey
 ALTER TABLE "OrderItem" ADD CONSTRAINT "OrderItem_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "IntegrationLog" ADD CONSTRAINT "IntegrationLog_channelId_fkey" FOREIGN KEY ("channelId") REFERENCES "Channel"("id") ON DELETE CASCADE ON UPDATE CASCADE;

@@ -14,14 +14,14 @@ export default async function ProductsPage() {
     const name = formData.get("name") as string;
     const sku = (formData.get("sku") as string).trim().toUpperCase();
     const basePrice = Number(formData.get("basePrice"));
-    const quantity = Number(formData.get("quantity"));
+    const totalStock = Number(formData.get("totalStock"));
 
     try {
       await addProduct({
         name,
         sku,
         basePrice,
-        quantity,
+        totalStock,
       });
 
       revalidatePath("/products");

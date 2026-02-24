@@ -4,7 +4,7 @@ export async function createProduct(data: {
   sku: string;
   name: string;
   basePrice: number;
-  quantity: number;
+  totalStock: number;
 }) {
   const normalizedSku = data.sku.trim().toUpperCase();
 
@@ -13,7 +13,7 @@ export async function createProduct(data: {
       name: data.name,
       sku: normalizedSku,
       basePrice: data.basePrice, // ✅ correct
-      quantity: data.quantity,
+      totalStock: data.totalStock,
       status: "ACTIVE",
     },
   });
@@ -32,10 +32,10 @@ export async function updateStock(productId: string, delta: number) {
 
   if (!product) throw new Error("PRODUCT_NOT_FOUND");
 
-  const newQty = Math.max(0, product.quantity + delta);
+  const newQty = Math.max(0, product.totalStock + delta);
 
   return prisma.product.update({
     where: { id: productId },
-    data: { quantity: newQty },
+    data: { totalStock: newQty },
   });
 }

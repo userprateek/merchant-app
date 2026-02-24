@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { Prisma } from "@prisma/client";
+import { Prisma, ProductStatus } from "@prisma/client";
 
 export async function getProducts() {
   return prisma.product.findMany({
@@ -14,18 +14,21 @@ export async function getProducts() {
   });
 }
 
-
 export async function addProduct(data: {
   name: string;
   sku: string;
   basePrice: number;
-  quantity: number;
+  totalStock: number;
 }) {
   try {
     return await prisma.product.create({
       data: {
-        ...data,
-        status: "ACTIVE",
+        name: data.name,
+        sku: data.sku,
+        basePrice: data.basePrice,
+        totalStock: data.totalStock,
+        reservedStock: 0,
+        status: ProductStatus.ACTIVE,
       },
     });
   } catch (error) {
@@ -47,11 +50,11 @@ export async function adjustStock(id: string, delta: number) {
 
   if (!product) return;
 
-  const newQty = Math.max(0, product.quantity + delta);
+  const newQty = Math.max(0, product.totalStock + delta);
 
   return prisma.product.update({
     where: { id },
-    data: { quantity: newQty },
+    data: { totalStock: newQty },
   });
 }
 
