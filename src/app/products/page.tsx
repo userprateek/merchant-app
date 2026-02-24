@@ -1,4 +1,5 @@
 import { getProducts, addProduct } from "@/features/merchant/service";
+import { getChannels } from "@/features/merchant/services/channel.service";
 import { revalidatePath } from "next/cache";
 import ProductForm from "@/features/merchant/components/ProductForm";
 import ProductList from "@/features/merchant/components/ProductList";
@@ -6,20 +7,20 @@ import { adjustStock } from "@/features/merchant/service";
 
 export default async function ProductsPage() {
   const products = await getProducts();
-
+  const channels = await getChannels();
   async function createProduct(prevState: any, formData: FormData) {
     "use server";
 
     const name = formData.get("name") as string;
     const sku = (formData.get("sku") as string).trim().toUpperCase();
-    const price = Number(formData.get("price"));
+    const basePrice = Number(formData.get("basePrice"));
     const quantity = Number(formData.get("quantity"));
 
     try {
       await addProduct({
         name,
         sku,
-        price,
+        basePrice,
         quantity,
       });
 
@@ -53,6 +54,7 @@ export default async function ProductsPage() {
       <ProductForm action={createProduct} />
       <ProductList
         products={products}
+        channels={channels}
         increaseStock={increaseStock}
         decreaseStock={decreaseStock}
       />

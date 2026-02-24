@@ -3,6 +3,13 @@ import { Prisma } from "@prisma/client";
 
 export async function getProducts() {
   return prisma.product.findMany({
+    include: {
+      listings: {
+        include: {
+          channel: true,
+        },
+      },
+    },
     orderBy: { createdAt: "desc" },
   });
 }
@@ -11,7 +18,7 @@ export async function getProducts() {
 export async function addProduct(data: {
   name: string;
   sku: string;
-  price: number;
+  basePrice: number;
   quantity: number;
 }) {
   try {

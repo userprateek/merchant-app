@@ -33,7 +33,7 @@ export default function ProductForm({ action }: { action: any }) {
     <form action={formAction}>
       <input name="name" placeholder="Name" required />
       <input name="sku" placeholder="SKU" required />
-      <input name="price" type="number" required />
+      <input name="basePrice" type="number" required />
       <input name="quantity" type="number" required />
 
       <button type="submit">Add Product</button>

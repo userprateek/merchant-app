@@ -7,13 +7,123 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+//
+//  PRODUCT (Internal SKU Master)
+//
+
 model Product {
+  id          String   @id @default(uuid())
+  sku         String   @unique
+  name        String
+  basePrice   Float
+  quantity    Int
+  status      String   // ACTIVE / INACTIVE
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  listings    ChannelListing[]
+  orderItems  OrderItem[]
+}
+
+//
+//  CHANNEL (Marketplace Registry)
+//
+
+model Channel {
   id        String   @id @default(uuid())
-  name      String
-  sku       String   @unique
-  price     Float
-  quantity  Int
-  status    String
+  name      String   @unique  // AMAZON / FLIPKART / MEESHO
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+
+  listings  ChannelListing[]
+  orders    Order[]
+}
+
+//
+//  CHANNEL LISTING (Product Representation per Channel)
+//
+
+model ChannelListing {
+  id               String   @id @default(uuid())
+  productId        String
+  channelId        String
+
+  marketplaceSku   String
+  externalId       String?
+
+  currentPrice     Float
+  discountAmount   Float?
+  markupAmount     Float?
+
+  followsBasePrice Boolean  @default(true)
+
+  listingStatus    String
+  syncedAt         DateTime?
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  product          Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  channel          Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
+
+  history          ChannelListingHistory[]
+
+  @@unique([productId, channelId])
+}
+
+//
+//  LISTING HISTORY (Audit Trail for Listing Status Changes)
+//
+
+model ChannelListingHistory {
+  id               String   @id @default(uuid())
+  channelListingId String
+
+  previousStatus   String?
+  newStatus        String
+  reason           String?
+
+  changedAt        DateTime @default(now())
+
+  listing          ChannelListing @relation(fields: [channelListingId], references: [id], onDelete: Cascade)
+}
+
+//
+//  MASTER ORDER TABLE (Unified Orders From All Channels)
+//
+
+model Order {
+  id              String   @id @default(uuid())
+  channelId       String
+
+  externalOrderId String   // Marketplace Order ID
+  totalAmount     Float
+  discountAmount  Float?
+  offerCode       String?
+
+  status          String   // CREATED / CONFIRMED / SHIPPED / CANCELLED / RETURNED
+
+  createdAt       DateTime
+  updatedAt       DateTime @updatedAt
+
+  channel         Channel   @relation(fields: [channelId], references: [id], onDelete: Restrict)
+  items           OrderItem[]
+
+  @@unique([channelId, externalOrderId])
+}
+
+//
+//  ORDER ITEMS (Line Items per Order)
+//
+
+model OrderItem {
+  id         String   @id @default(uuid())
+  orderId    String
+  productId  String
+
+  quantity   Int
+  unitPrice  Float
+  totalPrice Float
+
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
 }
