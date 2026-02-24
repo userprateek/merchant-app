@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
+import ConfirmButton from "@/components/ConfirmButton";
 
 type Props = {
   product: any;
@@ -15,16 +16,18 @@ export default function ChannelListingManager({
   saveListingAction,
   delistAction,
 }: Props) {
-  const [editingChannelId, setEditingChannelId] =
-    useState<string | null>(null);
+  const [editingChannelId, setEditingChannelId] = useState<string | null>(null);
 
   const [discountMap, setDiscountMap] = useState<Record<string, number>>({});
+
   const [markupMap, setMarkupMap] = useState<Record<string, number>>({});
+
+  const formRefs = useRef<Record<string, HTMLFormElement | null>>({});
 
   function handleChange(
     channelId: string,
     type: "discount" | "markup",
-    value: number
+    value: number,
   ) {
     if (type === "discount") {
       setDiscountMap((prev) => ({
@@ -40,31 +43,31 @@ export default function ChannelListingManager({
   }
 
   function getFinalPrice(channelId: string, basePrice: number) {
-    const discount = discountMap[channelId] ?? 0;
-    const markup = markupMap[channelId] ?? 0;
+    const discount =
+      discountMap[channelId] ??
+      product.listings.find((l: any) => l.channelId === channelId)
+        ?.discountAmount ??
+      0;
+
+    const markup =
+      markupMap[channelId] ??
+      product.listings.find((l: any) => l.channelId === channelId)
+        ?.markupAmount ??
+      0;
 
     return basePrice - discount + markup;
   }
 
-  function confirmDelist(listingId: string) {
-    const confirmed = window.confirm(
-      "Are you sure you want to delist?"
-    );
-
-    if (!confirmed) return;
-
-    const formData = new FormData();
-    formData.append("listingId", listingId);
-    formData.append("productId", product.id);
-
-    delistAction(formData);
-  }
-
+  const activeChannels = channels.filter((c) => c.isEnabled);
   return (
     <table
       border={1}
       cellPadding={8}
-      style={{ marginTop: 20, width: "100%" }}
+      style={{
+        marginTop: 20,
+        width: "100%",
+        borderCollapse: "collapse",
+      }}
     >
       <thead>
         <tr>
@@ -79,27 +82,19 @@ export default function ChannelListingManager({
       </thead>
 
       <tbody>
-        {channels.map((channel) => {
+        {activeChannels.map((channel) => {
           const listing = product.listings.find(
-            (l: any) => l.channelId === channel.id
+            (l: any) => l.channelId === channel.id,
           );
 
           const isEditing = editingChannelId === channel.id;
 
           const discount =
-            discountMap[channel.id] ??
-            listing?.discountAmount ??
-            0;
+            discountMap[channel.id] ?? listing?.discountAmount ?? 0;
 
-          const markup =
-            markupMap[channel.id] ??
-            listing?.markupAmount ??
-            0;
+          const markup = markupMap[channel.id] ?? listing?.markupAmount ?? 0;
 
-          const finalPrice = getFinalPrice(
-            channel.id,
-            product.basePrice
-          );
+          const finalPrice = getFinalPrice(channel.id, product.basePrice);
 
           return (
             <tr key={channel.id}>
@@ -113,11 +108,7 @@ export default function ChannelListingManager({
                   value={discount}
                   readOnly={!isEditing}
                   onChange={(e) =>
-                    handleChange(
-                      channel.id,
-                      "discount",
-                      Number(e.target.value)
-                    )
+                    handleChange(channel.id, "discount", Number(e.target.value))
                   }
                 />
               </td>
@@ -128,11 +119,7 @@ export default function ChannelListingManager({
                   value={markup}
                   readOnly={!isEditing}
                   onChange={(e) =>
-                    handleChange(
-                      channel.id,
-                      "markup",
-                      Number(e.target.value)
-                    )
+                    handleChange(channel.id, "markup", Number(e.target.value))
                   }
                 />
               </td>
@@ -140,45 +127,47 @@ export default function ChannelListingManager({
               <td>₹{finalPrice}</td>
 
               <td>
-                {listing
-                  ? listing.listingStatus
-                  : "Not Listed"}
+                {!channel.isEnabled && "Disabled"}
+
+                {listing ? listing.listingStatus : "Not Listed"}
               </td>
 
               <td>
                 {!listing && !isEditing && (
-                  <button
-                    onClick={() =>
-                      setEditingChannelId(channel.id)
-                    }
-                  >
+                  <button onClick={() => setEditingChannelId(channel.id)}>
                     List
                   </button>
                 )}
 
                 {listing && !isEditing && (
                   <>
-                    <button
-                      onClick={() =>
-                        setEditingChannelId(channel.id)
-                      }
-                    >
+                    <button onClick={() => setEditingChannelId(channel.id)}>
                       Update
                     </button>
 
-                    <button
-                      onClick={() =>
-                        confirmDelist(listing.id)
-                      }
+                    <ConfirmButton
+                      message="Are you sure you want to delist this product?"
+                      onConfirm={() => {
+                        const formData = new FormData();
+                        formData.append("listingId", listing.id);
+                        formData.append("productId", product.id);
+                        delistAction(formData);
+                      }}
+                      style={{ marginLeft: 6 }}
                     >
                       Delist
-                    </button>
+                    </ConfirmButton>
                   </>
                 )}
 
                 {isEditing && (
                   <>
-                    <form action={saveListingAction}>
+                    <form
+                      ref={(el) => {
+                        formRefs.current[channel.id] = el;
+                      }}
+                      action={saveListingAction}
+                    >
                       <input
                         type="hidden"
                         name="productId"
@@ -189,27 +178,23 @@ export default function ChannelListingManager({
                         name="channelId"
                         value={channel.id}
                       />
-                      <input
-                        type="hidden"
-                        name="discount"
-                        value={discount}
-                      />
-                      <input
-                        type="hidden"
-                        name="markup"
-                        value={markup}
-                      />
-
-                      <button type="submit">
-                        Save
-                      </button>
+                      <input type="hidden" name="discount" value={discount} />
+                      <input type="hidden" name="markup" value={markup} />
                     </form>
+
+                    <ConfirmButton
+                      message="Confirm listing with this pricing?"
+                      onConfirm={() =>
+                        formRefs.current[channel.id]?.requestSubmit()
+                      }
+                    >
+                      Save
+                    </ConfirmButton>
 
                     <button
                       type="button"
-                      onClick={() =>
-                        setEditingChannelId(null)
-                      }
+                      onClick={() => setEditingChannelId(null)}
+                      style={{ marginLeft: 6 }}
                     >
                       Cancel
                     </button>

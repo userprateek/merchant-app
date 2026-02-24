@@ -1,13 +1,20 @@
+import { prisma } from "@/lib/prisma";
 import { getProducts, addProduct } from "@/features/merchant/service";
 import { getChannels } from "@/features/merchant/services/channel.service";
 import { revalidatePath } from "next/cache";
 import ProductForm from "@/features/merchant/components/ProductForm";
 import ProductList from "@/features/merchant/components/ProductList";
-import { adjustStock } from "@/features/merchant/service";
 
 export default async function ProductsPage() {
   const products = await getProducts();
   const channels = await getChannels();
+
+  /*
+  |--------------------------------------------------------------------------
+  | CREATE PRODUCT
+  |--------------------------------------------------------------------------
+  */
+
   async function createProduct(prevState: any, formData: FormData) {
     "use server";
 
@@ -25,7 +32,6 @@ export default async function ProductsPage() {
       });
 
       revalidatePath("/products");
-
       return { success: true };
     } catch (error: any) {
       if (error.message === "SKU_ALREADY_EXISTS") {
@@ -36,22 +42,72 @@ export default async function ProductsPage() {
     }
   }
 
-  async function increaseStock(id: string) {
+  /*
+  |--------------------------------------------------------------------------
+  | INCREASE STOCK
+  |--------------------------------------------------------------------------
+  */
+
+  async function increaseStock(formData: FormData) {
     "use server";
-    adjustStock(id, 1);
+
+    const id = formData.get("id") as string;
+
+    await prisma.$transaction(async (tx) => {
+      await tx.product.update({
+        where: { id },
+        data: { totalStock: { increment: 1 } },
+      });
+
+      await tx.inventoryMovement.create({
+        data: {
+          productId: id,
+          type: "MANUAL_ADJUST",
+          quantity: 1,
+          reference: "MANUAL",
+        },
+      });
+    });
+
     revalidatePath("/products");
   }
 
-  async function decreaseStock(id: string) {
+  /*
+  |--------------------------------------------------------------------------
+  | DECREASE STOCK
+  |--------------------------------------------------------------------------
+  */
+
+  async function decreaseStock(formData: FormData) {
     "use server";
-    adjustStock(id, -1);
+
+    const id = formData.get("id") as string;
+
+    await prisma.$transaction(async (tx) => {
+      await tx.product.update({
+        where: { id },
+        data: { totalStock: { decrement: 1 } },
+      });
+
+      await tx.inventoryMovement.create({
+        data: {
+          productId: id,
+          type: "MANUAL_ADJUST",
+          quantity: -1,
+          reference: "MANUAL",
+        },
+      });
+    });
+
     revalidatePath("/products");
   }
 
   return (
     <div style={{ padding: 24 }}>
       <h1>Inventory</h1>
+
       <ProductForm action={createProduct} />
+
       <ProductList
         products={products}
         channels={channels}

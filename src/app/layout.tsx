@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import GlobalModal from "@/features/merchant/components/GlobalModal";
-import GlobalAlert from "@/features/merchant/components/GlobalAlert";
+import ConfirmModal from "@/components/ConfirmModal";
 
 export const metadata: Metadata = {
   title: "Merchant App",
@@ -18,7 +18,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <GlobalModal />
-        <GlobalAlert />
+        <ConfirmModal />
         <Navbar />
         {children}
       </body>

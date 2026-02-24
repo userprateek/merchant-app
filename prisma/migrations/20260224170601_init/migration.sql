@@ -10,21 +10,44 @@ CREATE TYPE "OrderStatus" AS ENUM ('CREATED', 'CONFIRMED', 'PACKED', 'SHIPPED', 
 -- CreateEnum
 CREATE TYPE "OversellPolicy" AS ENUM ('REJECT', 'ALLOW', 'LIMITED');
 
+-- CreateEnum
+CREATE TYPE "ImageSourceType" AS ENUM ('URL', 'LOCAL');
+
+-- CreateEnum
+CREATE TYPE "InventoryMovementType" AS ENUM ('CONFIRM', 'CANCEL', 'RETURN', 'MANUAL_ADJUST');
+
 -- CreateTable
 CREATE TABLE "Product" (
     "id" TEXT NOT NULL,
     "sku" TEXT NOT NULL,
     "name" TEXT NOT NULL,
+    "description" TEXT,
+    "metaTitle" TEXT,
+    "metaDescription" TEXT,
     "basePrice" DOUBLE PRECISION NOT NULL,
     "totalStock" INTEGER NOT NULL,
     "reservedStock" INTEGER NOT NULL DEFAULT 0,
     "oversellPolicy" "OversellPolicy" NOT NULL DEFAULT 'REJECT',
     "oversellLimit" INTEGER,
     "status" "ProductStatus" NOT NULL DEFAULT 'ACTIVE',
+    "attributes" JSONB,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Product_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "ProductImage" (
+    "id" TEXT NOT NULL,
+    "productId" TEXT NOT NULL,
+    "sourceType" "ImageSourceType" NOT NULL DEFAULT 'URL',
+    "url" TEXT,
+    "filePath" TEXT,
+    "sortOrder" INTEGER NOT NULL DEFAULT 0,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "ProductImage_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -114,6 +137,18 @@ CREATE TABLE "IntegrationLog" (
     CONSTRAINT "IntegrationLog_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "InventoryMovement" (
+    "id" TEXT NOT NULL,
+    "productId" TEXT NOT NULL,
+    "type" "InventoryMovementType" NOT NULL,
+    "quantity" INTEGER NOT NULL,
+    "reference" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "InventoryMovement_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "Product_sku_key" ON "Product"("sku");
 
@@ -125,6 +160,9 @@ CREATE UNIQUE INDEX "ChannelListing_productId_channelId_key" ON "ChannelListing"
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Order_channelId_externalOrderId_key" ON "Order"("channelId", "externalOrderId");
+
+-- AddForeignKey
+ALTER TABLE "ProductImage" ADD CONSTRAINT "ProductImage_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "ChannelListing" ADD CONSTRAINT "ChannelListing_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -146,3 +184,6 @@ ALTER TABLE "OrderItem" ADD CONSTRAINT "OrderItem_productId_fkey" FOREIGN KEY ("
 
 -- AddForeignKey
 ALTER TABLE "IntegrationLog" ADD CONSTRAINT "IntegrationLog_channelId_fkey" FOREIGN KEY ("channelId") REFERENCES "Channel"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "InventoryMovement" ADD CONSTRAINT "InventoryMovement_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE CASCADE ON UPDATE CASCADE;
