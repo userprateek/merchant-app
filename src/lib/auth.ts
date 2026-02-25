@@ -8,8 +8,37 @@ import { ROLE_COOKIE, SESSION_COOKIE } from "@/lib/auth-constants";
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
 const API_TOKEN_TTL_MS = 1000 * 60 * 60; // 1 hour
 
+type CookieSameSite = "lax" | "strict" | "none";
+
 function getPepper() {
   return process.env.PASSWORD_PEPPER ?? "dev_pepper_change_me";
+}
+
+function getCookieOptions(expiresAt: Date) {
+  const secureDefault = process.env.NODE_ENV === "production";
+  const secure =
+    process.env.COOKIE_SECURE === "true"
+      ? true
+      : process.env.COOKIE_SECURE === "false"
+        ? false
+        : secureDefault;
+
+  const sameSiteRaw = (process.env.COOKIE_SAME_SITE ?? "lax").toLowerCase();
+  const sameSite: CookieSameSite =
+    sameSiteRaw === "none" || sameSiteRaw === "strict" || sameSiteRaw === "lax"
+      ? sameSiteRaw
+      : "lax";
+
+  const domain = process.env.COOKIE_DOMAIN?.trim() || undefined;
+
+  return {
+    httpOnly: true,
+    sameSite,
+    secure,
+    expires: expiresAt,
+    path: "/",
+    ...(domain ? { domain } : {}),
+  } as const;
 }
 
 function md5(value: string) {
@@ -119,21 +148,16 @@ export async function updateUserRoleByAdmin(userId: string, role: UserRole) {
 export async function loginWithPassword(email: string, password: string) {
   const user = await validateUserCredentials(email, password);
   const { token, expiresAt } = await createSessionToken(user.id, SESSION_TTL_MS);
+  const cookieOptions = getCookieOptions(expiresAt);
 
   const cookieStore = await cookies();
   cookieStore.set(SESSION_COOKIE, token, {
+    ...cookieOptions,
     httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    expires: expiresAt,
-    path: "/",
   });
   cookieStore.set(ROLE_COOKIE, user.role, {
+    ...cookieOptions,
     httpOnly: false,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    expires: expiresAt,
-    path: "/",
   });
 
   return user;
