@@ -14,6 +14,7 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  console.log("Version: 1.0.0");
   return (
     <html lang="en">
       <body>

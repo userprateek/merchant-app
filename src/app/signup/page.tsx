@@ -28,8 +28,8 @@ export default function SignupPage() {
           <FloatingInput name="name" label="Name" required maxLength={120} />
           <FloatingInput name="email" label="Email" type="email" required maxLength={200} />
           <FloatingInput name="password" label="Password" type="password" required maxLength={100} />
-        </div>
-        <AppButton type="submit">Create Account</AppButton>
+          <AppButton type="submit">Create Account</AppButton>
+        </div>  
       </form>
     </div>
   );

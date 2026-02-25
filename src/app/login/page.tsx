@@ -23,8 +23,8 @@ export default function LoginPage() {
         <div className="form-grid-single">
           <FloatingInput name="email" label="Email" type="email" required maxLength={200} />
           <FloatingInput name="password" label="Password" type="password" required maxLength={100} />
+          <AppButton type="submit">Login</AppButton>
         </div>
-        <AppButton type="submit">Login</AppButton>
       </form>
       <p className="page-subtitle">
         Need an account? <Link href="/signup">Sign up</Link>
