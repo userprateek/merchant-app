@@ -14,6 +14,30 @@ function getPepper() {
   return process.env.PASSWORD_PEPPER ?? "dev_pepper_change_me";
 }
 
+function isIPv4(value: string) {
+  return /^(25[0-5]|2[0-4]\d|1?\d?\d)(\.(25[0-5]|2[0-4]\d|1?\d?\d)){3}$/.test(
+    value
+  );
+}
+
+function normalizeCookieDomain(raw?: string) {
+  if (!raw) return undefined;
+  let value = raw.trim().toLowerCase();
+  if (!value) return undefined;
+
+  // allow users to pass full URL by mistake; keep only host part
+  value = value.replace(/^https?:\/\//, "").split("/")[0] ?? value;
+  value = value.split(":")[0] ?? value;
+
+  // domain attribute should not be set for localhost/IP host setups
+  if (value === "localhost" || isIPv4(value)) return undefined;
+
+  // basic safety gate to avoid invalid cookie domain exceptions
+  if (!/^[a-z0-9.-]+$/.test(value) || !value.includes(".")) return undefined;
+
+  return value.startsWith(".") ? value : `.${value}`;
+}
+
 function getCookieOptions(expiresAt: Date) {
   const secureDefault = process.env.NODE_ENV === "production";
   const secure =
@@ -29,7 +53,7 @@ function getCookieOptions(expiresAt: Date) {
       ? sameSiteRaw
       : "lax";
 
-  const domain = process.env.COOKIE_DOMAIN?.trim() || undefined;
+  const domain = normalizeCookieDomain(process.env.COOKIE_DOMAIN);
 
   return {
     httpOnly: true,
