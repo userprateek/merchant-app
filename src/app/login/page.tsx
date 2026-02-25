@@ -19,6 +19,7 @@ export default function LoginPage() {
       if (error instanceof Error && error.message === "INVALID_CREDENTIALS") {
         redirect("/login?error=invalid_credentials");
       }
+      console.log(error);
       redirect("/login?error=login_failed");
     }
   }
