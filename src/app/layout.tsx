@@ -3,6 +3,7 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 import GlobalModal from "@/features/merchant/components/GlobalModal";
 import ConfirmModal from "@/components/ConfirmModal";
+import VersionLogger from "@/components/VersionLogger";
 
 export const metadata: Metadata = {
   title: "Merchant App",
@@ -14,10 +15,10 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  console.log("Version: 1.0.0");
   return (
     <html lang="en">
       <body>
+        <VersionLogger />
         <GlobalModal />
         <ConfirmModal />
         <Navbar />
