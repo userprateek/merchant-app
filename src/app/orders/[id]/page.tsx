@@ -1,6 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { confirmOrder } from "@/features/orders/service";
+import {
+  cancelOrder,
+  confirmOrder,
+  packOrder,
+  shipOrder,
+} from "@/features/orders/service";
+import { formatDateTime } from "@/lib/time";
 
 export default async function OrderDetailPage({
   params,
@@ -32,22 +38,21 @@ export default async function OrderDetailPage({
 
   async function cancelAction() {
     "use server";
-
-    await prisma.order.update({
-      where: { id: orderId },
-      data: { status: "CANCELLED" },
-    });
+    await cancelOrder(orderId);
 
     revalidatePath(`/orders/${orderId}`);
   }
 
   async function shipAction() {
     "use server";
+    await shipOrder(orderId);
 
-    await prisma.order.update({
-      where: { id: orderId },
-      data: { status: "SHIPPED" },
-    });
+    revalidatePath(`/orders/${orderId}`);
+  }
+
+  async function packAction() {
+    "use server";
+    await packOrder(orderId);
 
     revalidatePath(`/orders/${orderId}`);
   }
@@ -60,7 +65,7 @@ export default async function OrderDetailPage({
 
       <p>Status: <strong>{order.status}</strong></p>
       <p>Total: ₹{order.totalAmount}</p>
-      <p>Created: {order.createdAt.toLocaleString()}</p>
+      <p>Created: {formatDateTime(order.createdAt)}</p>
 
       <h3>Items</h3>
 
@@ -94,6 +99,12 @@ export default async function OrderDetailPage({
         )}
 
         {order.status === "CONFIRMED" && (
+          <form action={packAction}>
+            <button type="submit">Mark as Packed</button>
+          </form>
+        )}
+
+        {order.status === "PACKED" && (
           <form action={shipAction}>
             <button type="submit">Mark as Shipped</button>
           </form>

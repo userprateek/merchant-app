@@ -3,11 +3,31 @@
 import { useState, useRef } from "react";
 import ConfirmButton from "@/components/ConfirmButton";
 
+type Listing = {
+  id: string;
+  channelId: string;
+  listingStatus: string;
+  discountAmount: number | null;
+  markupAmount: number | null;
+};
+
+type ProductForListings = {
+  id: string;
+  name: string;
+  sku: string;
+  basePrice: number;
+  listings: Listing[];
+};
+
 type Props = {
-  product: any;
-  channels: any[];
-  saveListingAction: (formData: FormData) => void;
-  delistAction: (formData: FormData) => void;
+  product: ProductForListings;
+  channels: {
+    id: string;
+    name: string;
+    isEnabled: boolean;
+  }[];
+  saveListingAction: (formData: FormData) => Promise<void>;
+  delistAction: (formData: FormData) => Promise<void>;
 };
 
 export default function ChannelListingManager({
@@ -45,13 +65,13 @@ export default function ChannelListingManager({
   function getFinalPrice(channelId: string, basePrice: number) {
     const discount =
       discountMap[channelId] ??
-      product.listings.find((l: any) => l.channelId === channelId)
+      product.listings.find((l) => l.channelId === channelId)
         ?.discountAmount ??
       0;
 
     const markup =
       markupMap[channelId] ??
-      product.listings.find((l: any) => l.channelId === channelId)
+      product.listings.find((l) => l.channelId === channelId)
         ?.markupAmount ??
       0;
 
@@ -84,7 +104,7 @@ export default function ChannelListingManager({
       <tbody>
         {activeChannels.map((channel) => {
           const listing = product.listings.find(
-            (l: any) => l.channelId === channel.id,
+            (l) => l.channelId === channel.id,
           );
 
           const isEditing = editingChannelId === channel.id;

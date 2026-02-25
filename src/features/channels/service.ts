@@ -9,11 +9,11 @@ export async function getChannels() {
 export async function updateChannelConfig(
   id: string,
   data: {
-    baseUrl?: string;
-    apiKey?: string;
-    apiSecret?: string;
-    accessToken?: string;
-    webhookSecret?: string;
+    baseUrl?: string | null;
+    apiKey?: string | null;
+    apiSecret?: string | null;
+    accessToken?: string | null;
+    webhookSecret?: string | null;
     isEnabled?: boolean;
     isSandbox?: boolean;
   }

@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function Home() {
   const buttonStyle: React.CSSProperties = {
     display: "block",
@@ -25,29 +27,29 @@ export default function Home() {
     <div style={containerStyle}>
       <h1 style={{ textAlign: "center" }}>Merchant Control Panel</h1>
 
-      <a href="/products" style={buttonStyle}>
+      <Link href="/products" style={buttonStyle}>
         📦 Manage Products
-      </a>
+      </Link>
 
-      <a href="/orders" style={buttonStyle}>
+      <Link href="/orders" style={buttonStyle}>
         🧾 Process Orders
-      </a>
+      </Link>
 
-      <a href="/channels" style={buttonStyle}>
+      <Link href="/channels" style={buttonStyle}>
         🔌 Configure Channels
-      </a>
+      </Link>
 
-      <a href="/products" style={buttonStyle}>
+      <Link href="/products" style={buttonStyle}>
         🏷 Manage Listings
-      </a>
+      </Link>
 
-      <a href="/integrations" style={buttonStyle}>
+      <Link href="/integrations" style={buttonStyle}>
         📡 Integration Logs
-      </a>
+      </Link>
 
-      <a href="/dashboard" style={buttonStyle}>
+      <Link href="/dashboard" style={buttonStyle}>
         📊 Analytics Dashboard
-      </a>
+      </Link>
     </div>
   );
 }

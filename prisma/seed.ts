@@ -43,7 +43,7 @@ async function main() {
   });
 
   // Create Orders
-  const order1 = await prisma.order.create({
+  await prisma.order.create({
     data: {
       channelId: amazon.id,
       externalOrderId: "AMZ-1001",
@@ -63,7 +63,7 @@ async function main() {
     },
   });
 
-  const order2 = await prisma.order.create({
+  await prisma.order.create({
     data: {
       channelId: flipkart.id,
       externalOrderId: "FLP-2001",
@@ -83,7 +83,7 @@ async function main() {
     },
   });
 
-  const order3 = await prisma.order.create({
+  await prisma.order.create({
     data: {
       channelId: amazon.id,
       externalOrderId: "AMZ-1002",

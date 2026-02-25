@@ -1,4 +1,14 @@
 import { prisma } from "@/lib/prisma";
+import { Prisma, ProductStatus } from "@prisma/client";
+
+export async function getProducts() {
+  return prisma.product.findMany({
+    include: {
+      listings: true,
+    },
+    orderBy: { createdAt: "desc" },
+  });
+}
 
 export async function createProduct(data: {
   sku: string;
@@ -8,21 +18,27 @@ export async function createProduct(data: {
 }) {
   const normalizedSku = data.sku.trim().toUpperCase();
 
-  return prisma.product.create({
-    data: {
-      name: data.name,
-      sku: normalizedSku,
-      basePrice: data.basePrice, // ✅ correct
-      totalStock: data.totalStock,
-      status: "ACTIVE",
-    },
-  });
-}
+  try {
+    return await prisma.product.create({
+      data: {
+        name: data.name,
+        sku: normalizedSku,
+        basePrice: data.basePrice,
+        totalStock: data.totalStock,
+        reservedStock: 0,
+        status: ProductStatus.ACTIVE,
+      },
+    });
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      throw new Error("SKU_ALREADY_EXISTS");
+    }
 
-export async function getAllProducts() {
-  return prisma.product.findMany({
-    orderBy: { createdAt: "desc" },
-  });
+    throw error;
+  }
 }
 
 export async function updateStock(productId: string, delta: number) {
@@ -37,5 +53,25 @@ export async function updateStock(productId: string, delta: number) {
   return prisma.product.update({
     where: { id: productId },
     data: { totalStock: newQty },
+  });
+}
+
+export async function deleteProduct(id: string) {
+  return prisma.product.delete({
+    where: { id },
+  });
+}
+
+export async function updateProduct(
+  id: string,
+  data: {
+    name: string;
+    basePrice: number;
+    status: ProductStatus;
+  }
+) {
+  return prisma.product.update({
+    where: { id },
+    data,
   });
 }

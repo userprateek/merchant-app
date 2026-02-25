@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:core": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' scripts/test-core.ts"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"

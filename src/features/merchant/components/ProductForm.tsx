@@ -6,7 +6,12 @@ import { useAtom } from "jotai";
 import { globalModalAtom } from "@/state/modal";
 type FormState = { success: true } | { error: string } | null;
 
-export default function ProductForm({ action }: { action: any }) {
+type FormAction = (
+  prevState: FormState,
+  formData: FormData
+) => Promise<FormState>;
+
+export default function ProductForm({ action }: { action: FormAction }) {
   const [state, formAction] = useActionState<FormState, FormData>(action, null);
 
   const [, setModal] = useAtom(globalModalAtom);

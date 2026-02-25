@@ -1,36 +1,109 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Merchant App
+
+Merchant App is an operations platform for brands selling across multiple commerce channels.  
+It gives operators one control surface for catalog, inventory, listings, orders, and integration monitoring.
+
+## Problem It Solves
+
+Merchants running on multiple marketplaces often manage each channel separately, which creates:
+- fragmented inventory visibility
+- inconsistent listing and pricing control
+- error-prone order processing
+- weak traceability for integration failures
+
+This project consolidates those workflows into a single system with guarded state transitions and operational tooling.
+
+## Core Capabilities
+
+### Catalog and Inventory
+- Product creation with SKU uniqueness.
+- Stock management with movement tracking.
+- Product content management (description, metadata, attributes, images).
+- Product edit, archive, and delete workflows.
+
+### Channel Operations
+- Channel configuration (credentials, environment mode, enable/disable).
+- Operational gating so only valid channels can be used for listing.
+
+### Listing Management
+- Per-channel listing control with pricing adjustments (discount/markup).
+- Listing/delisting with transition history.
+- Content completeness checks before listing.
+- Duplicate listing prevention.
+
+### Order Management
+- Order lifecycle with controlled transitions:
+  `CREATED -> CONFIRMED -> PACKED -> SHIPPED -> DELIVERED`
+- Cancel and return handling.
+- Bulk actions for operational throughput.
+- Filtering and pagination for large order sets.
+- Manual order pull from enabled channels.
+
+### Integration Observability
+- Integration event logging (payload, status, response).
+- Failed-log retry workflow from UI.
+- Integration hooks wired into core operations (e.g., shipping, order pull).
+
+### Operational Dashboard
+- Snapshot metrics for products, listings, and orders.
+- Order status distribution.
+- Low-stock risk visibility.
+
+## Architecture
+
+- **Frontend/Application**: Next.js App Router with server actions.
+- **Domain/Data Layer**: Prisma ORM with PostgreSQL.
+- **Core Domains**: `Product`, `Channel`, `ChannelListing`, `Order`, `InventoryMovement`, `IntegrationLog`.
+- **Modular Services**: domain logic grouped under `src/features/*`.
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+- Node.js 20+
+- PostgreSQL
 
+### Installation
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Environment
+Create `.env`:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```env
+DATABASE_URL="postgresql://..."
+CHANNEL_SECRET_KEY="your-strong-key"
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Database Setup
+```bash
+npx prisma migrate dev
+npx prisma generate
+npx prisma db seed
+```
 
-## Learn More
+### Run
+```bash
+npm run dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+Open: [http://localhost:3000](http://localhost:3000)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Scripts
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `npm run dev` - start local development server
+- `npm run build` - build production bundle
+- `npm run start` - run production server
+- `npm run lint` - static lint checks
+- `npm run test:core` - core service sanity checks
 
-## Deploy on Vercel
+## Project Layout
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- `src/app/` - route handlers and pages
+- `src/features/` - domain services and feature modules
+- `src/lib/` - shared infrastructure utilities
+- `prisma/` - schema, migrations, and seed data
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Current Roadmap
+
+See [EXECUTION_ROADMAP.md](./EXECUTION_ROADMAP.md) for P0/P1/P2 delivery plan and ongoing implementation status.

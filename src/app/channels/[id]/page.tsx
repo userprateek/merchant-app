@@ -1,6 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { notFound } from "next/navigation";
+import { updateChannelConfig } from "@/features/channels/service";
+import { decryptSecret, encryptSecret } from "@/lib/secrets";
+import {
+  getBooleanFromCheckbox,
+  getOptionalString,
+} from "@/lib/validation";
 
 export default async function ChannelDetailPage({
   params,
@@ -17,28 +23,17 @@ export default async function ChannelDetailPage({
     notFound();
   }
 
-  async function updateChannelConfig(formData: FormData) {
+  async function updateChannelConfigAction(formData: FormData) {
     "use server";
 
-    const baseUrl = formData.get("baseUrl") as string;
-    const apiKey = formData.get("apiKey") as string;
-    const apiSecret = formData.get("apiSecret") as string;
-    const accessToken = formData.get("accessToken") as string;
-    const webhookSecret = formData.get("webhookSecret") as string;
-    const isEnabled = formData.get("isEnabled") === "on";
-    const isSandbox = formData.get("isSandbox") === "on";
-
-    await prisma.channel.update({
-      where: { id },
-      data: {
-        baseUrl: baseUrl || null,
-        apiKey: apiKey || null,
-        apiSecret: apiSecret || null,
-        accessToken: accessToken || null,
-        webhookSecret: webhookSecret || null,
-        isEnabled,
-        isSandbox,
-      },
+    await updateChannelConfig(id, {
+      baseUrl: getOptionalString(formData, "baseUrl") ?? null,
+      apiKey: encryptSecret(getOptionalString(formData, "apiKey")),
+      apiSecret: encryptSecret(getOptionalString(formData, "apiSecret")),
+      accessToken: encryptSecret(getOptionalString(formData, "accessToken")),
+      webhookSecret: encryptSecret(getOptionalString(formData, "webhookSecret")),
+      isEnabled: getBooleanFromCheckbox(formData, "isEnabled"),
+      isSandbox: getBooleanFromCheckbox(formData, "isSandbox"),
     });
 
     revalidatePath("/channels");
@@ -49,7 +44,7 @@ export default async function ChannelDetailPage({
     <div style={{ padding: 24, maxWidth: 600 }}>
       <h1>Configure Channel: {channel.name}</h1>
 
-      <form action={updateChannelConfig}>
+      <form action={updateChannelConfigAction}>
         <div style={{ marginBottom: 12 }}>
           <label>Base URL</label>
           <br />
@@ -65,7 +60,7 @@ export default async function ChannelDetailPage({
           <br />
           <input
             name="apiKey"
-            defaultValue={channel.apiKey || ""}
+            defaultValue={decryptSecret(channel.apiKey)}
             style={{ width: "100%" }}
           />
         </div>
@@ -75,7 +70,7 @@ export default async function ChannelDetailPage({
           <br />
           <input
             name="apiSecret"
-            defaultValue={channel.apiSecret || ""}
+            defaultValue={decryptSecret(channel.apiSecret)}
             style={{ width: "100%" }}
           />
         </div>
@@ -85,7 +80,7 @@ export default async function ChannelDetailPage({
           <br />
           <input
             name="accessToken"
-            defaultValue={channel.accessToken || ""}
+            defaultValue={decryptSecret(channel.accessToken)}
             style={{ width: "100%" }}
           />
         </div>
@@ -95,7 +90,7 @@ export default async function ChannelDetailPage({
           <br />
           <input
             name="webhookSecret"
-            defaultValue={channel.webhookSecret || ""}
+            defaultValue={decryptSecret(channel.webhookSecret)}
             style={{ width: "100%" }}
           />
         </div>

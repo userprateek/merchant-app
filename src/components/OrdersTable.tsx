@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
+import { formatDateTime } from "@/lib/time";
 
 type Order = {
   id: string;
@@ -10,19 +12,21 @@ type Order = {
   channel: {
     name: string;
   };
-  createdAt: Date;
+  createdAt: string;
 };
 
 type Props = {
   orders: Order[];
-  onBulkConfirm: (ids: string[]) => void;
-  onBulkShip: (ids: string[]) => void;
-  onBulkCancel: (ids: string[]) => void;
+  onBulkConfirm: (ids: string[]) => Promise<void>;
+  onBulkPack: (ids: string[]) => Promise<void>;
+  onBulkShip: (ids: string[]) => Promise<void>;
+  onBulkCancel: (ids: string[]) => Promise<void>;
 };
 
 export default function OrdersTable({
   orders,
   onBulkConfirm,
+  onBulkPack,
   onBulkShip,
   onBulkCancel,
 }: Props) {
@@ -59,6 +63,7 @@ export default function OrdersTable({
   const allConfirmed = selectedOrders.every(
     (o) => o.status === "CONFIRMED"
   );
+  const allPacked = selectedOrders.every((o) => o.status === "PACKED");
 
   return (
     <>
@@ -76,6 +81,17 @@ export default function OrdersTable({
 
         <button
           disabled={selected.length === 0 || !allConfirmed}
+          onClick={() => {
+            onBulkPack(selected);
+            clearSelection();
+          }}
+          style={{ marginLeft: 8 }}
+        >
+          Pack Selected
+        </button>
+
+        <button
+          disabled={selected.length === 0 || !allPacked}
           onClick={() => {
             onBulkShip(selected);
             clearSelection();
@@ -140,11 +156,9 @@ export default function OrdersTable({
               <td>{order.channel.name}</td>
               <td>{order.status}</td>
               <td>₹{order.totalAmount}</td>
+              <td>{formatDateTime(order.createdAt)}</td>
               <td>
-                {new Date(order.createdAt).toLocaleString()}
-              </td>
-              <td>
-                <a href={`/orders/${order.id}`}>Manage</a>
+                <Link href={`/orders/${order.id}`}>Manage</Link>
               </td>
             </tr>
           ))}

@@ -1,16 +1,18 @@
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 
-type IntegrationEvent =
+export type IntegrationEvent =
   | "LIST_PRODUCT"
   | "DELIST_PRODUCT"
   | "CONFIRM_ORDER"
   | "SHIP_ORDER"
-  | "CANCEL_ORDER";
+  | "CANCEL_ORDER"
+  | "PULL_ORDERS";
 
 export async function dispatchIntegration(
   channelId: string,
   event: IntegrationEvent,
-  payload: any
+  payload: Prisma.InputJsonValue
 ) {
   try {
     // Placeholder for real API call
@@ -30,13 +32,15 @@ export async function dispatchIntegration(
     });
 
     return simulatedResponse;
-  } catch (error: any) {
+  } catch (error: unknown) {
     await prisma.integrationLog.create({
       data: {
         channelId,
         eventType: event,
         payload,
-        response: { error: error.message },
+        response: {
+          error: error instanceof Error ? error.message : "UNKNOWN_ERROR",
+        },
         status: "FAILED",
       },
     });

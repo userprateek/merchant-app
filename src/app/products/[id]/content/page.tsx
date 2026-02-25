@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
+import { getOptionalString } from "@/lib/validation";
 
 export default async function ProductContentPage({
   params,
@@ -18,17 +20,18 @@ export default async function ProductContentPage({
   async function saveContent(formData: FormData) {
     "use server";
 
-    const description = formData.get("description") as string;
-    const metaTitle = formData.get("metaTitle") as string;
-    const metaDescription = formData.get("metaDescription") as string;
-    const attributesRaw = formData.get("attributes") as string;
+    const description = getOptionalString(formData, "description");
+    const metaTitle = getOptionalString(formData, "metaTitle");
+    const metaDescription = getOptionalString(formData, "metaDescription");
+    const attributesRaw = getOptionalString(formData, "attributes");
 
-    let attributes: any = null;
+    let attributes: Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput =
+      Prisma.JsonNull;
 
     try {
       attributes = attributesRaw
-        ? JSON.parse(attributesRaw)
-        : null;
+        ? (JSON.parse(attributesRaw) as Prisma.InputJsonValue)
+        : Prisma.JsonNull;
     } catch {
       throw new Error("INVALID_JSON");
     }

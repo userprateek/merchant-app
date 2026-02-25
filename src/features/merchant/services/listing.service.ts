@@ -1,6 +1,7 @@
 import { dispatchIntegration } from "@/features/integrations/dispatcher";
 import { prisma } from "@/lib/prisma";
-import { ListingStatus } from "@prisma/client";
+import { ListingStatus, Prisma } from "@prisma/client";
+import { canTransitionListing } from "@/features/merchant/services/listing-transitions";
 
 /*
 |--------------------------------------------------------------------------
@@ -8,14 +9,34 @@ import { ListingStatus } from "@prisma/client";
 |--------------------------------------------------------------------------
 */
 
-function canTransition(from: ListingStatus, to: ListingStatus) {
-  const allowed: Record<ListingStatus, ListingStatus[]> = {
-    LISTED: ["DELISTED", "SUSPENDED"],
-    DELISTED: ["LISTED"],
-    SUSPENDED: ["LISTED", "DELISTED"],
-  };
+export function canTransition(from: ListingStatus, to: ListingStatus) {
+  return canTransitionListing(from, to);
+}
 
-  return allowed[from]?.includes(to);
+async function assertProductIsListable(
+  db: Prisma.TransactionClient | typeof prisma,
+  productId: string
+) {
+  const product = await db.product.findUnique({
+    where: { id: productId },
+    include: {
+      images: true,
+    },
+  });
+
+  if (!product) {
+    throw new Error("PRODUCT_NOT_FOUND");
+  }
+
+  const missing: string[] = [];
+  if (!product.description?.trim()) missing.push("description");
+  if (!product.metaTitle?.trim()) missing.push("metaTitle");
+  if (!product.metaDescription?.trim()) missing.push("metaDescription");
+  if (product.images.length === 0) missing.push("images");
+
+  if (missing.length > 0) {
+    throw new Error(`PRODUCT_CONTENT_INCOMPLETE:${missing.join(",")}`);
+  }
 }
 
 /*
@@ -30,6 +51,8 @@ export async function createListing(data: {
   marketplaceSku: string;
   currentPrice: number;
 }) {
+  await assertProductIsListable(prisma, data.productId);
+
   const channel = await prisma.channel.findUnique({
     where: { id: data.channelId },
   });
@@ -104,6 +127,10 @@ export async function updateListingStatus(
 
     if (!canTransition(listing.listingStatus, newStatus)) {
       throw new Error("INVALID_LISTING_TRANSITION");
+    }
+
+    if (newStatus === "LISTED") {
+      await assertProductIsListable(tx, listing.productId);
     }
 
     // Future: outbound integration call here

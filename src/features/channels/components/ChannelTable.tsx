@@ -1,9 +1,14 @@
 "use client";
 
-import { useState } from "react";
+type ChannelRow = {
+  id: string;
+  name: string;
+  baseUrl: string | null;
+  isEnabled: boolean;
+  isSandbox: boolean;
+};
 
-export default function ChannelTable({ channels }: any) {
-  const [editingId, setEditingId] = useState<string | null>(null);
+export default function ChannelTable({ channels }: { channels: ChannelRow[] }) {
 
   return (
     <table border={1} cellPadding={8} style={{ width: "100%" }}>
@@ -18,7 +23,7 @@ export default function ChannelTable({ channels }: any) {
       </thead>
 
       <tbody>
-        {channels.map((ch: any) => (
+        {channels.map((ch) => (
           <tr key={ch.id}>
             <td>{ch.name}</td>
             <td>{ch.baseUrl || "-"}</td>
