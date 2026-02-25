@@ -25,9 +25,11 @@ function allowedForPath(pathname: string, role: string) {
 
 function readCookieFromHeader(request: NextRequest, name: string) {
   const direct = request.cookies.get(name)?.value;
+  console.log(direct,'direct');
   if (direct) return direct;
 
   const rawCookie = request.headers.get("cookie");
+  console.log(rawCookie,'rawCookie');
   if (!rawCookie) return undefined;
 
   const token = rawCookie
