@@ -4,7 +4,7 @@ import { useEffect } from "react";
 
 export default function VersionLogger() {
   useEffect(() => {
-    console.log("Version: 1.0.3");
+    console.log("Version: 1.0.4");
   }, []);
 
   return null;

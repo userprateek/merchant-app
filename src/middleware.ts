@@ -23,6 +23,23 @@ function allowedForPath(pathname: string, role: string) {
   return rule.roles.includes(role);
 }
 
+function readCookieFromHeader(request: NextRequest, name: string) {
+  const direct = request.cookies.get(name)?.value;
+  if (direct) return direct;
+
+  const rawCookie = request.headers.get("cookie");
+  if (!rawCookie) return undefined;
+
+  const token = rawCookie
+    .split(";")
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(`${name}=`));
+
+  if (!token) return undefined;
+  const value = token.slice(name.length + 1);
+  return value ? decodeURIComponent(value) : undefined;
+}
+
 export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   if (
@@ -33,8 +50,8 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const sessionToken = request.cookies.get(SESSION_COOKIE)?.value;
-  const role = request.cookies.get(ROLE_COOKIE)?.value;
+  const sessionToken = readCookieFromHeader(request, SESSION_COOKIE);
+  const role = readCookieFromHeader(request, ROLE_COOKIE);
 
   if (PUBLIC_PATHS.has(pathname) && sessionToken) {
     return NextResponse.redirect(new URL("/", request.url));
