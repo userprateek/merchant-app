@@ -16,7 +16,6 @@ export default function SignupPage() {
 
       await createViewerSignupAccount({ name, email, password });
       await loginWithPassword(email, password);
-      redirect("/");
     } catch (error) {
       if (error instanceof Error && error.message.startsWith("INVALID_")) {
         redirect("/signup?error=invalid_input");
@@ -26,6 +25,7 @@ export default function SignupPage() {
       }
       redirect("/signup?error=signup_failed");
     }
+    redirect("/");
   }
 
   return (

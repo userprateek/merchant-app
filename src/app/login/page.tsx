@@ -14,14 +14,13 @@ export default function LoginPage() {
       const email = getRequiredString(formData, "email");
       const password = getRequiredString(formData, "password");
       await loginWithPassword(email, password);
-      redirect("/");
     } catch (error) {
       if (error instanceof Error && error.message === "INVALID_CREDENTIALS") {
         redirect("/login?error=invalid_credentials");
       }
-      console.log(error);
       redirect("/login?error=login_failed");
     }
+    redirect("/");
   }
 
   return (
