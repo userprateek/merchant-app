@@ -4,18 +4,27 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import FloatingInput from "@/components/FloatingInput";
 import AppButton from "@/components/AppButton";
+import LoginErrorModalBridge from "@/app/login/LoginErrorModalBridge";
 
 export default function LoginPage() {
   async function loginAction(formData: FormData) {
     "use server";
-    const email = getRequiredString(formData, "email");
-    const password = getRequiredString(formData, "password");
-    await loginWithPassword(email, password);
-    redirect("/");
+    try {
+      const email = getRequiredString(formData, "email");
+      const password = getRequiredString(formData, "password");
+      await loginWithPassword(email, password);
+      redirect("/");
+    } catch (error) {
+      if (error instanceof Error && error.message === "INVALID_CREDENTIALS") {
+        redirect("/login?error=invalid_credentials");
+      }
+      redirect("/login?error=login_failed");
+    }
   }
 
   return (
     <div className="app-shell app-shell--narrow">
+      <LoginErrorModalBridge />
       <div className="page-header">
         <h1 className="page-title">Login</h1>
       </div>
