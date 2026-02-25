@@ -127,17 +127,21 @@ export default async function ProductListingsPage({
   }
 
   return (
-    <div style={{ padding: 24 }}>
-      <h2>
-        Manage Listings — {product.name} ({product.sku})
-      </h2>
+    <div className="app-shell">
+      <div className="page-header">
+        <h1 className="page-title">
+          Manage Listings — {product.name} ({product.sku})
+        </h1>
+      </div>
 
-      <ChannelListingManager
-        product={productForClient}
-        channels={channelsForClient}
-        saveListingAction={saveListingAction}
-        delistAction={delistAction}
-      />
+      <section className="section-card">
+        <ChannelListingManager
+          product={productForClient}
+          channels={channelsForClient}
+          saveListingAction={saveListingAction}
+          delistAction={delistAction}
+        />
+      </section>
     </div>
   );
 }

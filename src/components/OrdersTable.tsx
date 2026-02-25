@@ -39,9 +39,7 @@ export default function OrdersTable({
 
   function toggle(id: string) {
     setSelected((prev) =>
-      prev.includes(id)
-        ? prev.filter((x) => x !== id)
-        : [...prev, id]
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     );
   }
 
@@ -57,17 +55,11 @@ export default function OrdersTable({
     setSelected([]);
   }
 
-  const selectedOrders = orders.filter((o) =>
-    selected.includes(o.id)
-  );
+  const selectedOrders = orders.filter((o) => selected.includes(o.id));
 
-  const allCreated = selectedOrders.every(
-    (o) => o.status === "CREATED"
-  );
+  const allCreated = selectedOrders.every((o) => o.status === "CREATED");
 
-  const allConfirmed = selectedOrders.every(
-    (o) => o.status === "CONFIRMED"
-  );
+  const allConfirmed = selectedOrders.every((o) => o.status === "CONFIRMED");
   const allPacked = selectedOrders.every((o) => o.status === "PACKED");
   const canManage = role === "ADMIN" || role === "MANAGER";
   const canPackShip = canManage || role === "PACKING_CREW";
@@ -118,39 +110,42 @@ export default function OrdersTable({
   return (
     <>
       {/* Bulk Actions */}
-      <div style={{ marginBottom: 16 }}>
-        <AppButton
-          disabled={selected.length === 0 || !allCreated || !canManage}
-          onClick={() => {
-            onBulkConfirm(selected);
-            clearSelection();
-          }}
-        >
-          Confirm Selected
-        </AppButton>
+      <div className="actions-row" style={{ marginBottom: 16 }}>
+        <div>
+          <AppButton
+            disabled={selected.length === 0 || !allCreated || !canManage}
+            onClick={() => {
+              onBulkConfirm(selected);
+              clearSelection();
+            }}
+          >
+            Confirm Selected
+          </AppButton>
+        </div>
 
-        <AppButton
-          disabled={selected.length === 0 || !allConfirmed || !canPackShip}
-          onClick={() => {
+        <div>
+          <AppButton
+            disabled={selected.length === 0 || !allConfirmed || !canPackShip}
+            onClick={() => {
             onBulkPack(selected);
             clearSelection();
           }}
-          style={{ marginLeft: 8 }}
         >
           Pack Selected
         </AppButton>
-
+        </div>
+        <div>
         <AppButton
           disabled={selected.length === 0 || !allPacked || !canPackShip}
           onClick={() => {
             onBulkShip(selected);
             clearSelection();
           }}
-          style={{ marginLeft: 8 }}
         >
           Ship Selected
         </AppButton>
-
+        </div>
+        <div>
         <ConfirmButton
           disabled={selected.length === 0 || !canManage}
           message="Are you sure you want to cancel selected orders?"
@@ -158,10 +153,10 @@ export default function OrdersTable({
             onBulkCancel(selected);
             clearSelection();
           }}
-          style={{ marginLeft: 8 }}
         >
           Cancel Selected
         </ConfirmButton>
+        </div>
       </div>
 
       <DataTable columns={columns} rows={orders} rowKey="id" />

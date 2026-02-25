@@ -46,15 +46,12 @@ export default function ChannelConfigForm({ defaults, action }: Props) {
         <FloatingInput name="webhookSecret" label="Webhook Secret" defaultValue={defaults.webhookSecret} />
       </div>
 
-      <div style={{ marginBottom: 12 }}>
-        <label>
+      <div className="checkbox-row">
+        <label className="checkbox-item">
           <input type="checkbox" name="isSandbox" defaultChecked={defaults.isSandbox} />
           Sandbox Mode
         </label>
-      </div>
-
-      <div style={{ marginBottom: 12 }}>
-        <label>
+        <label className="checkbox-item">
           <input type="checkbox" name="isEnabled" defaultChecked={defaults.isEnabled} />
           Enable Channel
         </label>

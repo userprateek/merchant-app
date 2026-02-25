@@ -18,10 +18,12 @@ export default function SignupPage() {
   }
 
   return (
-    <div style={{ padding: 24, maxWidth: 420 }}>
-      <h1>Create Account</h1>
-      <p>Self-signup users are created with VIEWER role.</p>
-      <form action={signupAction} className="form-shell">
+    <div className="app-shell app-shell--narrow">
+      <div className="page-header">
+        <h1 className="page-title">Create Account</h1>
+        <p className="page-subtitle">Self-signup users are created with VIEWER role.</p>
+      </div>
+      <form action={signupAction} className="form-shell section-card">
         <div className="form-grid-single">
           <FloatingInput name="name" label="Name" required maxLength={120} />
           <FloatingInput name="email" label="Email" type="email" required maxLength={200} />

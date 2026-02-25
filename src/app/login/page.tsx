@@ -15,16 +15,18 @@ export default function LoginPage() {
   }
 
   return (
-    <div style={{ padding: 24, maxWidth: 420 }}>
-      <h1>Login</h1>
-      <form action={loginAction} className="form-shell">
+    <div className="app-shell app-shell--narrow">
+      <div className="page-header">
+        <h1 className="page-title">Login</h1>
+      </div>
+      <form action={loginAction} className="form-shell section-card">
         <div className="form-grid-single">
           <FloatingInput name="email" label="Email" type="email" required maxLength={200} />
           <FloatingInput name="password" label="Password" type="password" required maxLength={100} />
         </div>
         <AppButton type="submit">Login</AppButton>
       </form>
-      <p style={{ marginTop: 12 }}>
+      <p className="page-subtitle">
         Need an account? <Link href="/signup">Sign up</Link>
       </p>
     </div>

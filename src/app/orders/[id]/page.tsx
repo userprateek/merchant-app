@@ -125,29 +125,48 @@ export default async function OrderDetailPage({
   }
 
   return (
-    <div style={{ padding: 24 }}>
-      <h2>
-        Order {order.externalOrderId} ({order.channel.name})
-      </h2>
+    <div className="app-shell">
+      <div className="page-header">
+        <h1 className="page-title">
+          Order {order.externalOrderId} ({order.channel.name})
+        </h1>
+      </div>
 
-      <p>Status: <strong>{order.status}</strong></p>
-      <p>Total: ₹{order.totalAmount}</p>
-      <p>Created: {formatDateTime(order.createdAt)}</p>
-      <p>
-        Customer Cancelled At:{" "}
-        <strong>{order.customerCancelledAt ? formatDateTime(order.customerCancelledAt) : "-"}</strong>
-      </p>
-      <p>
-        Returned To Warehouse At:{" "}
-        <strong>{order.warehouseReceivedAt ? formatDateTime(order.warehouseReceivedAt) : "-"}</strong>
-      </p>
+      <div className="meta-grid">
+        <div className="meta-item">
+          <div className="meta-label">Status</div>
+          <div className="meta-value">{order.status}</div>
+        </div>
+        <div className="meta-item">
+          <div className="meta-label">Total</div>
+          <div className="meta-value">₹{order.totalAmount}</div>
+        </div>
+        <div className="meta-item">
+          <div className="meta-label">Created</div>
+          <div className="meta-value">{formatDateTime(order.createdAt)}</div>
+        </div>
+        <div className="meta-item">
+          <div className="meta-label">Customer Cancelled At</div>
+          <div className="meta-value">
+            {order.customerCancelledAt ? formatDateTime(order.customerCancelledAt) : "-"}
+          </div>
+        </div>
+        <div className="meta-item">
+          <div className="meta-label">Returned To Warehouse At</div>
+          <div className="meta-value">
+            {order.warehouseReceivedAt ? formatDateTime(order.warehouseReceivedAt) : "-"}
+          </div>
+        </div>
+      </div>
 
-      <h3>Items</h3>
-      <DataTable columns={itemColumns} rows={order.items} rowKey="id" />
+      <section className="section-card">
+        <h2 className="section-title">Items</h2>
+        <DataTable columns={itemColumns} rows={order.items} rowKey="id" />
+      </section>
 
-      <div style={{ marginTop: 20 }}>
+      <section className="section-card">
         {(user.role === "ADMIN" || user.role === "MANAGER" || user.role === "PACKING_CREW") && (
-          <div style={{ marginBottom: 10, display: "flex", gap: 8 }}>
+          <div className="actions-row" style={{ marginBottom: 10 }}>
             <form id="generate-shipping-label-form" action={generateShippingLabelAction}>
               <ConfirmButton
                 formId="generate-shipping-label-form"
@@ -227,7 +246,7 @@ export default async function OrderDetailPage({
               </ConfirmButton>
             </form>
           )}
-      </div>
+      </section>
     </div>
   );
 }

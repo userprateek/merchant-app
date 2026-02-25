@@ -51,40 +51,46 @@ export default async function DashboardPage() {
   ];
 
   return (
-    <div style={{ padding: 24 }}>
-      <h1>Analytics Dashboard</h1>
+    <div className="app-shell">
+      <div className="page-header">
+        <h1 className="page-title">Analytics Dashboard</h1>
+      </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
-        <div style={{ border: "1px solid #ddd", padding: 12 }}>
-          <strong>Products</strong>
-          <div>{totalProducts}</div>
+      <div className="stats-grid">
+        <div className="stat-card">
+          <div className="stat-label">Products</div>
+          <div className="stat-value">{totalProducts}</div>
         </div>
-        <div style={{ border: "1px solid #ddd", padding: 12 }}>
-          <strong>Orders</strong>
-          <div>{totalOrders}</div>
+        <div className="stat-card">
+          <div className="stat-label">Orders</div>
+          <div className="stat-value">{totalOrders}</div>
         </div>
-        <div style={{ border: "1px solid #ddd", padding: 12 }}>
-          <strong>Active Listings</strong>
-          <div>{activeListings}</div>
+        <div className="stat-card">
+          <div className="stat-label">Active Listings</div>
+          <div className="stat-value">{activeListings}</div>
         </div>
       </div>
 
-      <h2 style={{ marginTop: 24 }}>Order Status Breakdown</h2>
-      <ul>
+      <section className="section-card">
+      <h2 className="section-title">Order Status Breakdown</h2>
+      <ul className="info-list">
         {orderCounts.map((item) => (
           <li key={item.status}>
             {item.status}: {item._count._all}
           </li>
         ))}
       </ul>
+      </section>
 
-      <h2 style={{ marginTop: 24 }}>Low Stock / At Risk</h2>
+      <section className="section-card">
+      <h2 className="section-title">Low Stock / At Risk</h2>
       <DataTable
         columns={lowStockColumns}
         rows={lowStockProducts}
         rowKey="id"
         emptyMessage="No low-stock products."
       />
+      </section>
     </div>
   );
 }

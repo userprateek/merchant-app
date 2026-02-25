@@ -46,10 +46,8 @@ export default function ConfirmModal() {
       >
         <p>{confirm.message}</p>
 
-        <div style={{ marginTop: 20 }}>
-          <AppButton onClick={handleYes} style={{ marginRight: 10 }}>
-            Yes
-          </AppButton>
+        <div style={{ display: "flex", gap: 20 }}>
+          <AppButton onClick={handleYes}>Yes</AppButton>
           <AppButton onClick={handleNo}>No</AppButton>
         </div>
       </div>

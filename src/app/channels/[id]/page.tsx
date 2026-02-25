@@ -57,21 +57,25 @@ export default async function ChannelDetailPage({
   }
 
   return (
-    <div style={{ padding: 24, maxWidth: 600 }}>
-      <h1>Configure Channel: {channel.name}</h1>
+    <div className="app-shell app-shell--narrow">
+      <div className="page-header">
+        <h1 className="page-title">Configure Channel: {channel.name}</h1>
+      </div>
 
-      <ChannelConfigForm
-        action={updateChannelConfigAction}
-        defaults={{
-          baseUrl: channel.baseUrl || "",
-          apiKey: decryptSecret(channel.apiKey),
-          apiSecret: decryptSecret(channel.apiSecret),
-          accessToken: decryptSecret(channel.accessToken),
-          webhookSecret: decryptSecret(channel.webhookSecret),
-          isSandbox: channel.isSandbox,
-          isEnabled: channel.isEnabled,
-        }}
-      />
+      <section className="section-card">
+        <ChannelConfigForm
+          action={updateChannelConfigAction}
+          defaults={{
+            baseUrl: channel.baseUrl || "",
+            apiKey: decryptSecret(channel.apiKey),
+            apiSecret: decryptSecret(channel.apiSecret),
+            accessToken: decryptSecret(channel.accessToken),
+            webhookSecret: decryptSecret(channel.webhookSecret),
+            isSandbox: channel.isSandbox,
+            isEnabled: channel.isEnabled,
+          }}
+        />
+      </section>
     </div>
   );
 }

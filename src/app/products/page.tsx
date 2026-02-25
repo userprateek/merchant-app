@@ -137,17 +137,25 @@ export default async function ProductsPage() {
   }
 
   return (
-    <div style={{ padding: 24 }}>
-      <h1>Inventory</h1>
+    <div className="app-shell">
+      <div className="page-header">
+        <h1 className="page-title">Inventory</h1>
+      </div>
 
-      <ProductForm action={createProductAction} />
+      <section className="section-card">
+        <h2 className="section-title">Add Product</h2>
+        <ProductForm action={createProductAction} />
+      </section>
 
-      <ProductList
-        products={products}
-        channels={channels}
-        increaseStock={increaseStock}
-        decreaseStock={decreaseStock}
-      />
+      <section className="section-card">
+        <h2 className="section-title">Product Catalog</h2>
+        <ProductList
+          products={products}
+          channels={channels}
+          increaseStock={increaseStock}
+          decreaseStock={decreaseStock}
+        />
+      </section>
     </div>
   );
 }

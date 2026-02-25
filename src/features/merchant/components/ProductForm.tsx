@@ -10,7 +10,7 @@ type FormState = { success: true } | { error: string } | null;
 
 type FormAction = (
   prevState: FormState,
-  formData: FormData
+  formData: FormData,
 ) => Promise<FormState>;
 
 export default function ProductForm({ action }: { action: FormAction }) {
@@ -38,14 +38,31 @@ export default function ProductForm({ action }: { action: FormAction }) {
 
   return (
     <form action={formAction} className="form-shell">
-      <div className="form-grid">
-        <FloatingInput name="name" label="Name" required />
-        <FloatingInput name="sku" label="SKU" upperCase required />
-        <FloatingInput name="basePrice" label="Base Price" type="number" required />
-        <FloatingInput name="totalStock" label="Total Stock" type="number" required />
+      <div className="form-grid form-grid--compact">
+        <FloatingInput name="name" label="Name" required maxLength={160} />
+        <FloatingInput
+          name="sku"
+          label="SKU"
+          upperCase
+          required
+          maxLength={80}
+        />
+        <FloatingInput
+          name="basePrice"
+          label="Base Price"
+          type="number"
+          required
+        />
+        <FloatingInput
+          name="totalStock"
+          label="Total Stock"
+          type="number"
+          required
+        />
+        <div>
+          <AppButton type="submit">Add Product</AppButton>
+        </div>
       </div>
-
-      <AppButton type="submit">Add Product</AppButton>
     </form>
   );
 }

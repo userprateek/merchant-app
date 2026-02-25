@@ -37,7 +37,7 @@ export default async function OrdersPage({
   const channelFilter = resolvedSearchParams?.channel;
   const currentPage = Math.max(
     1,
-    Number.parseInt(resolvedSearchParams?.page ?? "1", 10) || 1
+    Number.parseInt(resolvedSearchParams?.page ?? "1", 10) || 1,
   );
   const pageSize = 25;
 
@@ -94,7 +94,11 @@ export default async function OrdersPage({
 
   async function handleBulkPack(orderIds: string[]) {
     "use server";
-    await requireRole([UserRole.ADMIN, UserRole.MANAGER, UserRole.PACKING_CREW]);
+    await requireRole([
+      UserRole.ADMIN,
+      UserRole.MANAGER,
+      UserRole.PACKING_CREW,
+    ]);
 
     await bulkPackOrders(orderIds);
     revalidatePath("/orders");
@@ -102,7 +106,11 @@ export default async function OrdersPage({
 
   async function handleBulkShip(orderIds: string[]) {
     "use server";
-    await requireRole([UserRole.ADMIN, UserRole.MANAGER, UserRole.PACKING_CREW]);
+    await requireRole([
+      UserRole.ADMIN,
+      UserRole.MANAGER,
+      UserRole.PACKING_CREW,
+    ]);
 
     await bulkShipOrders(orderIds);
     revalidatePath("/orders");
@@ -144,17 +152,18 @@ export default async function OrdersPage({
   }
 
   return (
-    <div style={{ padding: 24 }}>
-      <h1>Orders</h1>
+    <div className="app-shell">
+      <div className="page-header">
+        <h1 className="page-title">Orders</h1>
+      </div>
 
       {/* Filters */}
-      <div style={{ marginBottom: 16 }}>
+      <section className="section-card">
         <form method="get" className="form-shell">
           <div className="form-grid">
             <FloatingSelect
               name="status"
               label="Order Status"
-              placeholder="All Status"
               options={[
                 { value: "", label: "All Status" },
                 { value: "CREATED", label: "CREATED" },
@@ -172,7 +181,6 @@ export default async function OrdersPage({
             <FloatingSelect
               name="channel"
               label="Channel"
-              placeholder="All Channels"
               options={[
                 { value: "", label: "All Channels" },
                 ...channels.map((ch) => ({ value: ch.id, label: ch.name })),
@@ -180,34 +188,37 @@ export default async function OrdersPage({
               defaultValue={channelFilter || ""}
               maxMenuHeight={220}
             />
-          </div>
-
-          <div className="form-actions">
-            <AppButton type="submit">Apply</AppButton>
+            <div>
+              <AppButton type="submit">Apply</AppButton>
+            </div>
           </div>
         </form>
         {(user.role === "ADMIN" || user.role === "MANAGER") && (
-          <div style={{ marginTop: 8, display: "flex", gap: 8 }}>
-            <form action={handlePullOrders}>
-              <AppButton type="submit">Pull Orders From Enabled Channels</AppButton>
+          <div className="actions-row" style={{ marginTop: 8 }}>
+            <form action={handlePullOrders} style={{ flex: 1 }}>
+              <AppButton type="submit">
+                Pull Orders From Enabled Channels
+              </AppButton>
             </form>
-            <form action={handlePollOrderUpdates}>
+            <form action={handlePollOrderUpdates} style={{ flex: 1 }}>
               <AppButton type="submit">Poll Channel Order Updates</AppButton>
             </form>
           </div>
         )}
-      </div>
+      </section>
 
-      <OrdersTable
-        orders={orders}
-        role={ordersRole}
-        onBulkConfirm={handleBulkConfirm}
-        onBulkPack={handleBulkPack}
-        onBulkShip={handleBulkShip}
-        onBulkCancel={handleBulkCancel}
-      />
+      <section className="section-card">
+        <OrdersTable
+          orders={orders}
+          role={ordersRole}
+          onBulkConfirm={handleBulkConfirm}
+          onBulkPack={handleBulkPack}
+          onBulkShip={handleBulkShip}
+          onBulkCancel={handleBulkCancel}
+        />
+      </section>
 
-      <div style={{ marginTop: 16, display: "flex", gap: 12, alignItems: "center" }}>
+      <div className="pager">
         <span>
           Page {currentPage} of {totalPages} ({totalCount} orders)
         </span>

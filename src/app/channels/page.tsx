@@ -16,9 +16,13 @@ export default async function ChannelsPage() {
   }));
 
   return (
-    <div style={{ padding: 24 }}>
-      <h1>Channel Configuration</h1>
-      <ChannelTable channels={channels} />
+    <div className="app-shell">
+      <div className="page-header">
+        <h1 className="page-title">Channel Configuration</h1>
+      </div>
+      <section className="section-card">
+        <ChannelTable channels={channels} />
+      </section>
     </div>
   );
 }

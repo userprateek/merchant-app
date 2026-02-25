@@ -177,7 +177,6 @@ export default function ChannelListingManager({
                     formData.append("productId", product.id);
                     delistAction(formData);
                   }}
-                  style={{ marginLeft: 6 }}
                 >
                   Delist
                 </ConfirmButton>
@@ -208,7 +207,6 @@ export default function ChannelListingManager({
                 <AppButton
                   type="button"
                   onClick={() => setEditingChannelId(null)}
-                  style={{ marginLeft: 6 }}
                 >
                   Cancel
                 </AppButton>
@@ -221,7 +219,7 @@ export default function ChannelListingManager({
   ];
 
   return (
-    <div style={{ marginTop: 20 }}>
+    <div>
       <DataTable columns={columns} rows={activeChannels} rowKey="id" />
     </div>
   );

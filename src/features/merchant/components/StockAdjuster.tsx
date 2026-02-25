@@ -12,7 +12,7 @@ export default function StockAdjuster({
   decrease: (id: string) => void
 }) {
   return (
-    <div style={{ display: "flex", gap: 8 }}>
+    <div className="actions-row">
       <AppButton onClick={() => decrease(id)}>-</AppButton>
       <AppButton onClick={() => increase(id)}>+</AppButton>
     </div>

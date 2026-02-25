@@ -74,7 +74,7 @@ export default async function AdminUsersPage() {
         <form
           id={`update-role-${user.id}`}
           action={updateRoleAction}
-          style={{ display: "flex", gap: 8 }}
+          className="row-inline no-wrap"
         >
           <input type="hidden" name="id" value={user.id} />
           <FloatingSelect
@@ -83,7 +83,7 @@ export default async function AdminUsersPage() {
             options={["ADMIN", "MANAGER", "PACKING_CREW", "VIEWER"]}
             defaultValue={user.role}
             maxMenuHeight={170}
-            style={{ minWidth: 180 }}
+            className="min-w-180"
           />
           <ConfirmButton
             formId={`update-role-${user.id}`}
@@ -117,30 +117,41 @@ export default async function AdminUsersPage() {
   ];
 
   return (
-    <div style={{ padding: 24 }}>
-      <h1>User & Role Management</h1>
+    <div className="app-shell">
+      <div className="page-header">
+        <h1 className="page-title">User & Role Management</h1>
+      </div>
 
-      <h2>Create User</h2>
-      <form action={createUserAction} className="form-shell" style={{ marginBottom: 20 }}>
-        <div className="form-grid">
-          <FloatingInput name="name" label="Name" required />
-          <FloatingInput name="email" label="Email" type="email" required />
-          <FloatingInput name="password" label="Password" type="password" required />
-          <FloatingSelect
-            name="role"
-            label="Role"
-            options={["ADMIN", "MANAGER", "PACKING_CREW", "VIEWER"]}
-            defaultValue="VIEWER"
-            maxMenuHeight={170}
-          />
-        </div>
-        <div className="form-actions">
-          <AppButton type="submit">Create</AppButton>
-        </div>
-      </form>
+      <section className="section-card">
+        <h2 className="section-title">Create User</h2>
+        <form action={createUserAction} className="form-shell">
+          <div className="form-grid">
+            <FloatingInput name="name" label="Name" required />
+            <FloatingInput name="email" label="Email" type="email" required />
+            <FloatingInput
+              name="password"
+              label="Password"
+              type="password"
+              required
+            />
+            <FloatingSelect
+              name="role"
+              label="Role"
+              options={["ADMIN", "MANAGER", "PACKING_CREW", "VIEWER"]}
+              defaultValue="VIEWER"
+              maxMenuHeight={170}
+            />
+            <div>
+              <AppButton type="submit">Create</AppButton>
+            </div>
+          </div>
+        </form>
+      </section>
 
-      <h2>Existing Users</h2>
-      <DataTable columns={columns} rows={users} rowKey="id" />
+      <section className="section-card">
+        <h2 className="section-title">Existing Users</h2>
+        <DataTable columns={columns} rows={users} rowKey="id" />
+      </section>
     </div>
   );
 }

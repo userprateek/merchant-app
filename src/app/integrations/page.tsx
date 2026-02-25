@@ -43,7 +43,7 @@ export default async function IntegrationsPage() {
       field: "payload",
       header: "Payload",
       render: (log) => (
-        <pre style={{ maxWidth: 240, whiteSpace: "pre-wrap" }}>
+        <pre className="cell-pre">
           {JSON.stringify(log.payload, null, 2)}
         </pre>
       ),
@@ -52,7 +52,7 @@ export default async function IntegrationsPage() {
       field: "response",
       header: "Response",
       render: (log) => (
-        <pre style={{ maxWidth: 240, whiteSpace: "pre-wrap" }}>
+        <pre className="cell-pre">
           {JSON.stringify(log.response, null, 2)}
         </pre>
       ),
@@ -73,14 +73,18 @@ export default async function IntegrationsPage() {
   ];
 
   return (
-    <div style={{ padding: 24 }}>
-      <h1>Integration Logs</h1>
-      <DataTable
-        columns={columns}
-        rows={logs}
-        rowKey="id"
-        emptyMessage="No integration logs yet."
-      />
+    <div className="app-shell">
+      <div className="page-header">
+        <h1 className="page-title">Integration Logs</h1>
+      </div>
+      <section className="section-card">
+        <DataTable
+          columns={columns}
+          rows={logs}
+          rowKey="id"
+          emptyMessage="No integration logs yet."
+        />
+      </section>
     </div>
   );
 }

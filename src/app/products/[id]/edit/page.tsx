@@ -72,13 +72,15 @@ export default async function ProductEditPage({
   }
 
   return (
-    <div style={{ padding: 24, maxWidth: 560 }}>
-      <h1>Edit Product</h1>
-      <p>
-        {existingProduct.name} ({existingProduct.sku})
-      </p>
+    <div className="app-shell app-shell--narrow">
+      <div className="page-header">
+        <h1 className="page-title">Edit Product</h1>
+        <p className="page-subtitle">
+          {existingProduct.name} ({existingProduct.sku})
+        </p>
+      </div>
 
-      <form action={saveProduct} className="form-shell">
+      <form action={saveProduct} className="form-shell section-card">
         <div className="form-grid-single">
           <FloatingInput name="name" label="Name" defaultValue={existingProduct.name} required />
           <FloatingInput
@@ -99,7 +101,7 @@ export default async function ProductEditPage({
         <AppButton type="submit">Save</AppButton>
       </form>
 
-      <div style={{ marginTop: 20, display: "flex", gap: 8 }}>
+      <div className="actions-row" style={{ marginTop: 12 }}>
         <form id="archive-product-form" action={archiveProductAction}>
           <ConfirmButton
             formId="archive-product-form"

@@ -80,46 +80,45 @@ export default async function ProductContentPage({
   }
 
   return (
-    <div style={{ padding: 24 }}>
-      <h1>Manage Content — {product.name}</h1>
+    <div className="app-shell app-shell--narrow">
+      <div className="page-header">
+        <h1 className="page-title">Manage Content — {product.name}</h1>
+      </div>
 
-      <form action={saveContent}>
-        <div>
-          <label>Description</label>
-          <br />
+      <form action={saveContent} className="section-card">
+        <div className="field-block">
+          <label className="surface-label">Description</label>
           <textarea
+            className="surface-textarea"
             name="description"
             defaultValue={product.description ?? ""}
             rows={5}
-            style={{ width: "100%" }}
           />
         </div>
 
-        <div style={{ marginTop: 16 }}>
-          <label>Meta Title</label>
-          <br />
+        <div className="field-block">
+          <label className="surface-label">Meta Title</label>
           <input
+            className="surface-input"
             name="metaTitle"
             defaultValue={product.metaTitle ?? ""}
-            style={{ width: "100%" }}
           />
         </div>
 
-        <div style={{ marginTop: 16 }}>
-          <label>Meta Description</label>
-          <br />
+        <div className="field-block">
+          <label className="surface-label">Meta Description</label>
           <textarea
+            className="surface-textarea"
             name="metaDescription"
             defaultValue={product.metaDescription ?? ""}
             rows={3}
-            style={{ width: "100%" }}
           />
         </div>
 
-        <div style={{ marginTop: 16 }}>
-          <label>Attributes (JSON)</label>
-          <br />
+        <div className="field-block">
+          <label className="surface-label">Attributes (JSON)</label>
           <textarea
+            className="surface-textarea"
             name="attributes"
             defaultValue={
               product.attributes
@@ -127,31 +126,31 @@ export default async function ProductContentPage({
                 : ""
             }
             rows={6}
-            style={{ width: "100%" }}
           />
         </div>
 
-        <div style={{ marginTop: 16 }}>
-          <label>Images (Add multiple URLs)</label>
-          <br />
-          {product.images.map((img) => (
+        <div className="field-block">
+          <label className="surface-label">Images (Add multiple URLs)</label>
+          <div className="stack-sm">
+            {product.images.map((img) => (
+              <input
+                className="surface-input"
+                key={img.id}
+                name="imageUrl"
+                defaultValue={img.url ?? ""}
+              />
+            ))}
+
+            {/* Empty input for adding new */}
             <input
-              key={img.id}
+              className="surface-input"
               name="imageUrl"
-              defaultValue={img.url ?? ""}
-              style={{ display: "block", width: "100%", marginBottom: 6 }}
+              placeholder="https://cdn.example.com/image.jpg"
             />
-          ))}
-
-          {/* Empty input for adding new */}
-          <input
-            name="imageUrl"
-            placeholder="https://cdn.example.com/image.jpg"
-            style={{ display: "block", width: "100%", marginTop: 6 }}
-          />
+          </div>
         </div>
 
-        <AppButton style={{ marginTop: 20 }} type="submit">
+        <AppButton style={{ marginTop: 16 }} type="submit">
           Save Content
         </AppButton>
       </form>

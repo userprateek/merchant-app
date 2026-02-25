@@ -54,21 +54,23 @@ function StockActions({
         <input type="hidden" name="id" value={productId} />
       </form>
 
-      <div style={{ marginTop: 6 }}>
-        <ConfirmButton
-          message="Increase stock by 1?"
-          onConfirm={() => incRef.current?.requestSubmit()}
-        >
-          +1
-        </ConfirmButton>
-
-        <ConfirmButton
-          message="Decrease stock by 1?"
-          onConfirm={() => decRef.current?.requestSubmit()}
-          style={{ marginLeft: 6 }}
-        >
-          -1
-        </ConfirmButton>
+      <div className="actions-row">
+        <div>
+          <ConfirmButton
+            message="Increase stock by 1?"
+            onConfirm={() => incRef.current?.requestSubmit()}
+          >
+            +1
+          </ConfirmButton>
+        </div>
+        <div>
+          <ConfirmButton
+            message="Decrease stock by 1?"
+            onConfirm={() => decRef.current?.requestSubmit()}
+          >
+            -1
+          </ConfirmButton>
+        </div>
       </div>
     </>
   );
@@ -94,25 +96,33 @@ export default function ProductList({
       render: (product) => `₹${product.basePrice}`,
     },
     {
-      field: "stock",
-      header: "Stock",
-      render: (product) => {
-        const available = product.totalStock - product.reservedStock;
-        return (
-          <>
-            <div>Total: {product.totalStock}</div>
-            <div>Reserved: {product.reservedStock}</div>
-            <div>
-              <strong>Available: {available}</strong>
-            </div>
-            <StockActions
-              productId={product.id}
-              increaseStock={increaseStock}
-              decreaseStock={decreaseStock}
-            />
-          </>
-        );
-      },
+      field: "totalStock",
+      header: "Total",
+      align: "right",
+      render: (product) => product.totalStock,
+    },
+    {
+      field: "reservedStock",
+      header: "Reserved",
+      align: "right",
+      render: (product) => product.reservedStock,
+    },
+    {
+      field: "availableStock",
+      header: "Available",
+      align: "right",
+      render: (product) => product.totalStock - product.reservedStock,
+    },
+    {
+      field: "adjust",
+      header: "Adjust",
+      render: (product) => (
+        <StockActions
+          productId={product.id}
+          increaseStock={increaseStock}
+          decreaseStock={decreaseStock}
+        />
+      ),
     },
     { field: "status", header: "Status" },
   ];
@@ -123,38 +133,35 @@ export default function ProductList({
       header: channel.name,
       render: (product) => {
         const listing = product.listings.find(
-          (channelListing) => channelListing.channelId === channel.id
+          (channelListing) => channelListing.channelId === channel.id,
         );
         if (!listing) return "Not Listed";
         return (
           <>
-            {listing.listingStatus}
-            <br />
-            ₹{listing.currentPrice}
+            <div>{listing.listingStatus}</div>
+            <div className="inventory-muted">₹{listing.currentPrice}</div>
           </>
         );
       },
-    })
+    }),
   );
 
   const manageColumn: DataTableColumn<ProductWithListings> = {
     field: "manage",
     header: "Manage",
     render: (product) => (
-      <>
+      <div className="inventory-actions">
         <Link href={`/products/${product.id}/listings`}>Listings</Link>
-        {" | "}
         <Link href={`/products/${product.id}/content`}>Content</Link>
-        {" | "}
         <Link href={`/products/${product.id}/edit`}>Edit</Link>
-      </>
+      </div>
     ),
   };
 
   const columns = [...baseColumns, ...channelColumns, manageColumn];
 
   return (
-    <div style={{ marginTop: 20 }}>
+    <div>
       <DataTable columns={columns} rows={products} rowKey="id" />
     </div>
   );

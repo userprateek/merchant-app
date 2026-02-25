@@ -11,32 +11,29 @@ export default async function Navbar() {
   }
 
   return (
-    <nav
-      style={{
-        padding: "16px",
-        background: "white",
-        borderBottom: "1px solid #eee",
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-      }}
-    >
-      <strong>
-        <Link href="/" style={{ textDecoration: "none", color: "inherit" }}>
-          Merchant App
-        </Link>
-      </strong>
-
-      <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+    <nav className="app-nav">
+      <div className="app-nav__brand">
+        <Link href="/">Merchant App</Link>
+      </div>
+      <div className="app-nav__actions">
         {user ? (
-          <>
-            <span>
-              {user.name} ({user.role})
-            </span>
-            <form action={logoutAction}>
-              <AppButton type="submit">Logout</AppButton>
-            </form>
-          </>
+          <details className="profile-menu">
+            <summary className="profile-menu__trigger">
+              <span className="profile-menu__name">{user.name}</span>
+              <span className="profile-menu__caret">▾</span>
+            </summary>
+            <div className="profile-menu__panel">
+              <div className="profile-menu__meta">
+                <div className="profile-menu__label">Signed in as</div>
+                <div className="profile-menu__value">{user.name}</div>
+                <div className="profile-menu__sub">{user.email}</div>
+                <div className="profile-menu__role">Role: {user.role}</div>
+              </div>
+              <form action={logoutAction}>
+                <AppButton type="submit">Logout</AppButton>
+              </form>
+            </div>
+          </details>
         ) : (
           <Link href="/login">Login</Link>
         )}
