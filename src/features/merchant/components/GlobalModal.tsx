@@ -2,6 +2,7 @@
 
 import { useAtom } from "jotai";
 import { globalModalAtom } from "@/state/modal";
+import AppButton from "@/components/AppButton";
 
 export default function GlobalModal() {
   const [modal, setModal] = useAtom(globalModalAtom);
@@ -45,12 +46,12 @@ export default function GlobalModal() {
       >
         <p>{modal.message}</p>
 
-        <button
+        <AppButton
           style={{ marginTop: 16 }}
           onClick={handleClose}
         >
           Close
-        </button>
+        </AppButton>
       </div>
     </>
   );

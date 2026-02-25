@@ -1,4 +1,4 @@
-import { dispatchIntegration } from "@/features/integrations/dispatcher";
+import { runChannelOperation } from "@/features/integrations/channel-operations";
 import { prisma } from "@/lib/prisma";
 
 type PullResult = {
@@ -19,7 +19,7 @@ export async function pullOrdersForChannel(channelId: string): Promise<PullResul
   if (!channel) throw new Error("CHANNEL_NOT_FOUND");
   if (!channel.isEnabled) throw new Error("CHANNEL_DISABLED");
 
-  await dispatchIntegration(channel.id, "PULL_ORDERS", {
+  await runChannelOperation(channel.id, "PULL_ORDERS", {
     channelId: channel.id,
     triggeredAt: new Date().toISOString(),
   });

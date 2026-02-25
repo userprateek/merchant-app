@@ -3,6 +3,7 @@
 import ConfirmButton from "@/components/ConfirmButton";
 import Link from "next/link";
 import { useRef } from "react";
+import DataTable, { DataTableColumn } from "@/components/DataTable";
 
 type ProductWithListings = {
   id: string;
@@ -83,85 +84,78 @@ export default function ProductList({
     return <p>No products yet.</p>;
   }
 
+  const baseColumns: DataTableColumn<ProductWithListings>[] = [
+    { field: "name", header: "Name" },
+    { field: "sku", header: "SKU" },
+    {
+      field: "basePrice",
+      header: "Base Price",
+      align: "right",
+      render: (product) => `₹${product.basePrice}`,
+    },
+    {
+      field: "stock",
+      header: "Stock",
+      render: (product) => {
+        const available = product.totalStock - product.reservedStock;
+        return (
+          <>
+            <div>Total: {product.totalStock}</div>
+            <div>Reserved: {product.reservedStock}</div>
+            <div>
+              <strong>Available: {available}</strong>
+            </div>
+            <StockActions
+              productId={product.id}
+              increaseStock={increaseStock}
+              decreaseStock={decreaseStock}
+            />
+          </>
+        );
+      },
+    },
+    { field: "status", header: "Status" },
+  ];
+
+  const channelColumns: DataTableColumn<ProductWithListings>[] = channels.map(
+    (channel) => ({
+      field: channel.id,
+      header: channel.name,
+      render: (product) => {
+        const listing = product.listings.find(
+          (channelListing) => channelListing.channelId === channel.id
+        );
+        if (!listing) return "Not Listed";
+        return (
+          <>
+            {listing.listingStatus}
+            <br />
+            ₹{listing.currentPrice}
+          </>
+        );
+      },
+    })
+  );
+
+  const manageColumn: DataTableColumn<ProductWithListings> = {
+    field: "manage",
+    header: "Manage",
+    render: (product) => (
+      <>
+        <Link href={`/products/${product.id}/listings`}>Listings</Link>
+        {" | "}
+        <Link href={`/products/${product.id}/content`}>Content</Link>
+        {" | "}
+        <Link href={`/products/${product.id}/edit`}>Edit</Link>
+      </>
+    ),
+  };
+
+  const columns = [...baseColumns, ...channelColumns, manageColumn];
+
   return (
-    <table
-      border={1}
-      cellPadding={8}
-      style={{ marginTop: 20, width: "100%", borderCollapse: "collapse" }}
-    >
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>SKU</th>
-          <th>Base Price</th>
-          <th>Stock</th>
-          <th>Status</th>
-
-          {channels.map((channel) => (
-            <th key={channel.id}>{channel.name}</th>
-          ))}
-
-          <th>Manage</th>
-        </tr>
-      </thead>
-
-      <tbody>
-        {products.map((product) => {
-          const available = product.totalStock - product.reservedStock;
-
-          return (
-            <tr key={product.id}>
-              <td>{product.name}</td>
-              <td>{product.sku}</td>
-              <td>₹{product.basePrice}</td>
-
-              <td>
-                <div>Total: {product.totalStock}</div>
-                <div>Reserved: {product.reservedStock}</div>
-                <div>
-                  <strong>Available: {available}</strong>
-                </div>
-
-                <StockActions
-                  productId={product.id}
-                  increaseStock={increaseStock}
-                  decreaseStock={decreaseStock}
-                />
-              </td>
-
-              <td>{product.status}</td>
-
-              {channels.map((channel) => {
-                const listing = product.listings.find(
-                  (channelListing) => channelListing.channelId === channel.id
-                );
-
-                return (
-                  <td key={channel.id}>
-                    {listing ? (
-                      <>
-                        {listing.listingStatus}
-                        <br />
-                        ₹{listing.currentPrice}
-                      </>
-                    ) : (
-                      "Not Listed"
-                    )}
-                  </td>
-                );
-              })}
-
-              <td>
-                <Link href={`/products/${product.id}/listings`}>Listings</Link>
-                {" | "}
-                <Link href={`/products/${product.id}/content`}>Content</Link>
-                {" | "}
-                <Link href={`/products/${product.id}/edit`}>Edit</Link>
-              </td>
-            </tr>
-          );
-        })}
-      </tbody>
-    </table>
+    <div style={{ marginTop: 20 }}>
+      <DataTable columns={columns} rows={products} rowKey="id" />
+    </div>
   );
 }

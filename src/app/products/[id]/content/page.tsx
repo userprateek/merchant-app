@@ -1,13 +1,17 @@
 import { prisma } from "@/lib/prisma";
-import { Prisma } from "@prisma/client";
+import { Prisma, UserRole } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { getOptionalString } from "@/lib/validation";
+import { requireRole } from "@/lib/auth";
+import AppButton from "@/components/AppButton";
 
 export default async function ProductContentPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await requireRole([UserRole.ADMIN, UserRole.MANAGER]);
+
   const { id } = await params;
 
   const product = await prisma.product.findUnique({
@@ -19,6 +23,7 @@ export default async function ProductContentPage({
 
   async function saveContent(formData: FormData) {
     "use server";
+    await requireRole([UserRole.ADMIN, UserRole.MANAGER]);
 
     const description = getOptionalString(formData, "description");
     const metaTitle = getOptionalString(formData, "metaTitle");
@@ -146,9 +151,9 @@ export default async function ProductContentPage({
           />
         </div>
 
-        <button style={{ marginTop: 20 }} type="submit">
+        <AppButton style={{ marginTop: 20 }} type="submit">
           Save Content
-        </button>
+        </AppButton>
       </form>
     </div>
   );

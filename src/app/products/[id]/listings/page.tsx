@@ -7,12 +7,16 @@ import {
   updateListingStatus,
 } from "@/features/merchant/services/listing.service";
 import { getRequiredNumber, getRequiredString } from "@/lib/validation";
+import { requireRole } from "@/lib/auth";
+import { UserRole } from "@prisma/client";
 
 export default async function ProductListingsPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await requireRole([UserRole.ADMIN, UserRole.MANAGER]);
+
   const { id } = await params;
 
   const product = await prisma.product.findUnique({
@@ -54,6 +58,7 @@ export default async function ProductListingsPage({
 
   async function saveListingAction(formData: FormData) {
     "use server";
+    await requireRole([UserRole.ADMIN, UserRole.MANAGER]);
 
     const productId = getRequiredString(formData, "productId");
     const channelId = getRequiredString(formData, "channelId");
@@ -111,6 +116,7 @@ export default async function ProductListingsPage({
 
   async function delistAction(formData: FormData) {
     "use server";
+    await requireRole([UserRole.ADMIN, UserRole.MANAGER]);
 
     const listingId = getRequiredString(formData, "listingId");
     const productId = getRequiredString(formData, "productId");

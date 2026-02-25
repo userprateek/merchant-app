@@ -2,6 +2,8 @@
 
 import { useState, useRef } from "react";
 import ConfirmButton from "@/components/ConfirmButton";
+import AppButton from "@/components/AppButton";
+import DataTable, { DataTableColumn } from "@/components/DataTable";
 
 type Listing = {
   id: string;
@@ -79,152 +81,148 @@ export default function ChannelListingManager({
   }
 
   const activeChannels = channels.filter((c) => c.isEnabled);
+  const columns: DataTableColumn<(typeof activeChannels)[number]>[] = [
+    { field: "name", header: "Channel" },
+    {
+      field: "basePrice",
+      header: "Base Price",
+      align: "right",
+      render: () => `₹${product.basePrice}`,
+    },
+    {
+      field: "discount",
+      header: "Discount",
+      render: (channel) => {
+        const listing = product.listings.find((l) => l.channelId === channel.id);
+        const isEditing = editingChannelId === channel.id;
+        const discount = discountMap[channel.id] ?? listing?.discountAmount ?? 0;
+        return (
+          <input
+            type="number"
+            value={discount}
+            readOnly={!isEditing}
+            onChange={(e) =>
+              handleChange(channel.id, "discount", Number(e.target.value))
+            }
+          />
+        );
+      },
+    },
+    {
+      field: "markup",
+      header: "Markup",
+      render: (channel) => {
+        const listing = product.listings.find((l) => l.channelId === channel.id);
+        const isEditing = editingChannelId === channel.id;
+        const markup = markupMap[channel.id] ?? listing?.markupAmount ?? 0;
+        return (
+          <input
+            type="number"
+            value={markup}
+            readOnly={!isEditing}
+            onChange={(e) =>
+              handleChange(channel.id, "markup", Number(e.target.value))
+            }
+          />
+        );
+      },
+    },
+    {
+      field: "finalPrice",
+      header: "Final Price",
+      align: "right",
+      render: (channel) => `₹${getFinalPrice(channel.id, product.basePrice)}`,
+    },
+    {
+      field: "status",
+      header: "Status",
+      render: (channel) => {
+        const listing = product.listings.find((l) => l.channelId === channel.id);
+        return (
+          <>
+            {!channel.isEnabled && "Disabled"}
+            {listing ? listing.listingStatus : "Not Listed"}
+          </>
+        );
+      },
+    },
+    {
+      field: "action",
+      header: "Action",
+      render: (channel) => {
+        const listing = product.listings.find((l) => l.channelId === channel.id);
+        const isEditing = editingChannelId === channel.id;
+        const discount = discountMap[channel.id] ?? listing?.discountAmount ?? 0;
+        const markup = markupMap[channel.id] ?? listing?.markupAmount ?? 0;
+
+        return (
+          <>
+            {!listing && !isEditing && (
+              <AppButton onClick={() => setEditingChannelId(channel.id)}>
+                List
+              </AppButton>
+            )}
+
+            {listing && !isEditing && (
+              <>
+                <AppButton onClick={() => setEditingChannelId(channel.id)}>
+                  Update
+                </AppButton>
+
+                <ConfirmButton
+                  message="Are you sure you want to delist this product?"
+                  onConfirm={() => {
+                    const formData = new FormData();
+                    formData.append("listingId", listing.id);
+                    formData.append("productId", product.id);
+                    delistAction(formData);
+                  }}
+                  style={{ marginLeft: 6 }}
+                >
+                  Delist
+                </ConfirmButton>
+              </>
+            )}
+
+            {isEditing && (
+              <>
+                <form
+                  ref={(el) => {
+                    formRefs.current[channel.id] = el;
+                  }}
+                  action={saveListingAction}
+                >
+                  <input type="hidden" name="productId" value={product.id} />
+                  <input type="hidden" name="channelId" value={channel.id} />
+                  <input type="hidden" name="discount" value={discount} />
+                  <input type="hidden" name="markup" value={markup} />
+                </form>
+
+                <ConfirmButton
+                  message="Confirm listing with this pricing?"
+                  onConfirm={() => formRefs.current[channel.id]?.requestSubmit()}
+                >
+                  Save
+                </ConfirmButton>
+
+                <AppButton
+                  type="button"
+                  onClick={() => setEditingChannelId(null)}
+                  style={{ marginLeft: 6 }}
+                >
+                  Cancel
+                </AppButton>
+              </>
+            )}
+          </>
+        );
+      },
+    },
+  ];
+
   return (
-    <table
-      border={1}
-      cellPadding={8}
-      style={{
-        marginTop: 20,
-        width: "100%",
-        borderCollapse: "collapse",
-      }}
-    >
-      <thead>
-        <tr>
-          <th>Channel</th>
-          <th>Base Price</th>
-          <th>Discount</th>
-          <th>Markup</th>
-          <th>Final Price</th>
-          <th>Status</th>
-          <th>Action</th>
-        </tr>
-      </thead>
-
-      <tbody>
-        {activeChannels.map((channel) => {
-          const listing = product.listings.find(
-            (l) => l.channelId === channel.id,
-          );
-
-          const isEditing = editingChannelId === channel.id;
-
-          const discount =
-            discountMap[channel.id] ?? listing?.discountAmount ?? 0;
-
-          const markup = markupMap[channel.id] ?? listing?.markupAmount ?? 0;
-
-          const finalPrice = getFinalPrice(channel.id, product.basePrice);
-
-          return (
-            <tr key={channel.id}>
-              <td>{channel.name}</td>
-
-              <td>₹{product.basePrice}</td>
-
-              <td>
-                <input
-                  type="number"
-                  value={discount}
-                  readOnly={!isEditing}
-                  onChange={(e) =>
-                    handleChange(channel.id, "discount", Number(e.target.value))
-                  }
-                />
-              </td>
-
-              <td>
-                <input
-                  type="number"
-                  value={markup}
-                  readOnly={!isEditing}
-                  onChange={(e) =>
-                    handleChange(channel.id, "markup", Number(e.target.value))
-                  }
-                />
-              </td>
-
-              <td>₹{finalPrice}</td>
-
-              <td>
-                {!channel.isEnabled && "Disabled"}
-
-                {listing ? listing.listingStatus : "Not Listed"}
-              </td>
-
-              <td>
-                {!listing && !isEditing && (
-                  <button onClick={() => setEditingChannelId(channel.id)}>
-                    List
-                  </button>
-                )}
-
-                {listing && !isEditing && (
-                  <>
-                    <button onClick={() => setEditingChannelId(channel.id)}>
-                      Update
-                    </button>
-
-                    <ConfirmButton
-                      message="Are you sure you want to delist this product?"
-                      onConfirm={() => {
-                        const formData = new FormData();
-                        formData.append("listingId", listing.id);
-                        formData.append("productId", product.id);
-                        delistAction(formData);
-                      }}
-                      style={{ marginLeft: 6 }}
-                    >
-                      Delist
-                    </ConfirmButton>
-                  </>
-                )}
-
-                {isEditing && (
-                  <>
-                    <form
-                      ref={(el) => {
-                        formRefs.current[channel.id] = el;
-                      }}
-                      action={saveListingAction}
-                    >
-                      <input
-                        type="hidden"
-                        name="productId"
-                        value={product.id}
-                      />
-                      <input
-                        type="hidden"
-                        name="channelId"
-                        value={channel.id}
-                      />
-                      <input type="hidden" name="discount" value={discount} />
-                      <input type="hidden" name="markup" value={markup} />
-                    </form>
-
-                    <ConfirmButton
-                      message="Confirm listing with this pricing?"
-                      onConfirm={() =>
-                        formRefs.current[channel.id]?.requestSubmit()
-                      }
-                    >
-                      Save
-                    </ConfirmButton>
-
-                    <button
-                      type="button"
-                      onClick={() => setEditingChannelId(null)}
-                      style={{ marginLeft: 6 }}
-                    >
-                      Cancel
-                    </button>
-                  </>
-                )}
-              </td>
-            </tr>
-          );
-        })}
-      </tbody>
-    </table>
+    <div style={{ marginTop: 20 }}>
+      <DataTable columns={columns} rows={activeChannels} rowKey="id" />
+    </div>
   );
 }

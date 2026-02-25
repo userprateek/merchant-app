@@ -2,6 +2,7 @@
 
 import { useAtom } from "jotai";
 import { confirmAtom } from "@/state/confirm";
+import AppButton from "@/components/AppButton";
 
 export default function ConfirmModal() {
   const [confirm, setConfirm] = useAtom(confirmAtom);
@@ -46,10 +47,10 @@ export default function ConfirmModal() {
         <p>{confirm.message}</p>
 
         <div style={{ marginTop: 20 }}>
-          <button onClick={handleYes} style={{ marginRight: 10 }}>
+          <AppButton onClick={handleYes} style={{ marginRight: 10 }}>
             Yes
-          </button>
-          <button onClick={handleNo}>No</button>
+          </AppButton>
+          <AppButton onClick={handleNo}>No</AppButton>
         </div>
       </div>
     </>

@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { OrderStatus, Prisma } from "@prisma/client";
+import { OrderStatus, Prisma, UserRole } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import {
   bulkPackOrders,
@@ -8,9 +8,13 @@ import {
   bulkCancelOrders,
 } from "@/features/orders/service";
 import { pullOrdersForAllEnabledChannels } from "@/features/orders/pull.service";
+import { pollOrderUpdatesFromAllEnabledChannels } from "@/features/orders/channel-events.service";
 import OrdersTable from "@/components/OrdersTable";
 import { toTimestampISO } from "@/lib/time";
 import Link from "next/link";
+import { requireRole } from "@/lib/auth";
+import FloatingSelect from "@/components/FloatingSelect";
+import AppButton from "@/components/AppButton";
 
 export default async function OrdersPage({
   searchParams,
@@ -21,6 +25,13 @@ export default async function OrdersPage({
     page?: string;
   }>;
 }) {
+  const user = await requireRole([
+    UserRole.ADMIN,
+    UserRole.MANAGER,
+    UserRole.PACKING_CREW,
+  ]);
+  const ordersRole = user.role as "ADMIN" | "MANAGER" | "PACKING_CREW";
+
   const resolvedSearchParams = await searchParams;
   const statusFilter = resolvedSearchParams?.status;
   const channelFilter = resolvedSearchParams?.channel;
@@ -75,6 +86,7 @@ export default async function OrdersPage({
 
   async function handleBulkConfirm(orderIds: string[]) {
     "use server";
+    await requireRole([UserRole.ADMIN, UserRole.MANAGER]);
 
     await bulkConfirmOrders(orderIds);
     revalidatePath("/orders");
@@ -82,6 +94,7 @@ export default async function OrdersPage({
 
   async function handleBulkPack(orderIds: string[]) {
     "use server";
+    await requireRole([UserRole.ADMIN, UserRole.MANAGER, UserRole.PACKING_CREW]);
 
     await bulkPackOrders(orderIds);
     revalidatePath("/orders");
@@ -89,6 +102,7 @@ export default async function OrdersPage({
 
   async function handleBulkShip(orderIds: string[]) {
     "use server";
+    await requireRole([UserRole.ADMIN, UserRole.MANAGER, UserRole.PACKING_CREW]);
 
     await bulkShipOrders(orderIds);
     revalidatePath("/orders");
@@ -96,6 +110,7 @@ export default async function OrdersPage({
 
   async function handleBulkCancel(orderIds: string[]) {
     "use server";
+    await requireRole([UserRole.ADMIN, UserRole.MANAGER]);
 
     await bulkCancelOrders(orderIds);
     revalidatePath("/orders");
@@ -103,8 +118,17 @@ export default async function OrdersPage({
 
   async function handlePullOrders() {
     "use server";
+    await requireRole([UserRole.ADMIN, UserRole.MANAGER]);
     await pullOrdersForAllEnabledChannels();
     revalidatePath("/orders");
+  }
+
+  async function handlePollOrderUpdates() {
+    "use server";
+    await requireRole([UserRole.ADMIN, UserRole.MANAGER]);
+    await pollOrderUpdatesFromAllEnabledChannels();
+    revalidatePath("/orders");
+    revalidatePath("/integrations");
   }
 
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
@@ -125,36 +149,58 @@ export default async function OrdersPage({
 
       {/* Filters */}
       <div style={{ marginBottom: 16 }}>
-        <form method="get">
-          <select name="status" defaultValue={statusFilter || ""}>
-            <option value="">All Status</option>
-            <option value="CREATED">CREATED</option>
-            <option value="CONFIRMED">CONFIRMED</option>
-            <option value="PACKED">PACKED</option>
-            <option value="SHIPPED">SHIPPED</option>
-            <option value="DELIVERED">DELIVERED</option>
-            <option value="CANCELLED">CANCELLED</option>
-            <option value="RETURNED">RETURNED</option>
-          </select>
+        <form method="get" className="form-shell">
+          <div className="form-grid">
+            <FloatingSelect
+              name="status"
+              label="Order Status"
+              placeholder="All Status"
+              options={[
+                { value: "", label: "All Status" },
+                { value: "CREATED", label: "CREATED" },
+                { value: "CONFIRMED", label: "CONFIRMED" },
+                { value: "PACKED", label: "PACKED" },
+                { value: "SHIPPED", label: "SHIPPED" },
+                { value: "DELIVERED", label: "DELIVERED" },
+                { value: "CANCELLED", label: "CANCELLED" },
+                { value: "RETURNED", label: "RETURNED" },
+              ]}
+              defaultValue={statusFilter || ""}
+              maxMenuHeight={180}
+            />
 
-          <select name="channel" defaultValue={channelFilter || ""}>
-            <option value="">All Channels</option>
-            {channels.map((ch) => (
-              <option key={ch.id} value={ch.id}>
-                {ch.name}
-              </option>
-            ))}
-          </select>
+            <FloatingSelect
+              name="channel"
+              label="Channel"
+              placeholder="All Channels"
+              options={[
+                { value: "", label: "All Channels" },
+                ...channels.map((ch) => ({ value: ch.id, label: ch.name })),
+              ]}
+              defaultValue={channelFilter || ""}
+              maxMenuHeight={220}
+            />
+          </div>
 
-          <button type="submit">Apply</button>
+          <div className="form-actions">
+            <AppButton type="submit">Apply</AppButton>
+          </div>
         </form>
-        <form action={handlePullOrders} style={{ marginTop: 8 }}>
-          <button type="submit">Pull Orders From Enabled Channels</button>
-        </form>
+        {(user.role === "ADMIN" || user.role === "MANAGER") && (
+          <div style={{ marginTop: 8, display: "flex", gap: 8 }}>
+            <form action={handlePullOrders}>
+              <AppButton type="submit">Pull Orders From Enabled Channels</AppButton>
+            </form>
+            <form action={handlePollOrderUpdates}>
+              <AppButton type="submit">Poll Channel Order Updates</AppButton>
+            </form>
+          </div>
+        )}
       </div>
 
       <OrdersTable
         orders={orders}
+        role={ordersRole}
         onBulkConfirm={handleBulkConfirm}
         onBulkPack={handleBulkPack}
         onBulkShip={handleBulkShip}

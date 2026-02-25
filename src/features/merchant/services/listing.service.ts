@@ -1,4 +1,4 @@
-import { dispatchIntegration } from "@/features/integrations/dispatcher";
+import { runChannelOperation } from "@/features/integrations/channel-operations";
 import { prisma } from "@/lib/prisma";
 import { ListingStatus, Prisma } from "@prisma/client";
 import { canTransitionListing } from "@/features/merchant/services/listing-transitions";
@@ -69,7 +69,7 @@ export async function createListing(data: {
     throw new Error("CHANNEL_NOT_CONFIGURED");
   }
 
-  await dispatchIntegration(channel.id, "LIST_PRODUCT", {
+  await runChannelOperation(channel.id, "LIST_PRODUCT", {
     productId: data.productId,
     marketplaceSku: data.marketplaceSku,
     price: data.currentPrice,
@@ -133,7 +133,18 @@ export async function updateListingStatus(
       await assertProductIsListable(tx, listing.productId);
     }
 
-    // Future: outbound integration call here
+    if (newStatus === "DELISTED") {
+      await runChannelOperation(listing.channelId, "DELIST_PRODUCT", {
+        listingId: listing.id,
+        productId: listing.productId,
+      });
+    }
+    if (newStatus === "LISTED") {
+      await runChannelOperation(listing.channelId, "LIST_PRODUCT", {
+        listingId: listing.id,
+        productId: listing.productId,
+      });
+    }
 
     await tx.channelListingHistory.create({
       data: {
@@ -166,8 +177,18 @@ export async function updateListingPrice(
     followsBasePrice?: boolean;
   },
 ) {
-  return prisma.channelListing.update({
+  const updatedListing = await prisma.channelListing.update({
     where: { id: listingId },
     data,
   });
+
+  await runChannelOperation(updatedListing.channelId, "UPDATE_LISTING_PRICE", {
+    listingId: updatedListing.id,
+    productId: updatedListing.productId,
+    currentPrice: updatedListing.currentPrice,
+    discountAmount: updatedListing.discountAmount,
+    markupAmount: updatedListing.markupAmount,
+  });
+
+  return updatedListing;
 }

@@ -3,6 +3,9 @@
 import Link from "next/link";
 import { useState } from "react";
 import { formatDateTime } from "@/lib/time";
+import ConfirmButton from "@/components/ConfirmButton";
+import AppButton from "@/components/AppButton";
+import DataTable, { DataTableColumn } from "@/components/DataTable";
 
 type Order = {
   id: string;
@@ -17,6 +20,7 @@ type Order = {
 
 type Props = {
   orders: Order[];
+  role: "ADMIN" | "MANAGER" | "PACKING_CREW";
   onBulkConfirm: (ids: string[]) => Promise<void>;
   onBulkPack: (ids: string[]) => Promise<void>;
   onBulkShip: (ids: string[]) => Promise<void>;
@@ -25,6 +29,7 @@ type Props = {
 
 export default function OrdersTable({
   orders,
+  role,
   onBulkConfirm,
   onBulkPack,
   onBulkShip,
@@ -64,23 +69,68 @@ export default function OrdersTable({
     (o) => o.status === "CONFIRMED"
   );
   const allPacked = selectedOrders.every((o) => o.status === "PACKED");
+  const canManage = role === "ADMIN" || role === "MANAGER";
+  const canPackShip = canManage || role === "PACKING_CREW";
+  const columns: DataTableColumn<Order>[] = [
+    {
+      field: "select",
+      header: (
+        <input
+          type="checkbox"
+          checked={selected.length > 0 && selected.length === orders.length}
+          onChange={toggleAll}
+        />
+      ),
+      align: "center",
+      render: (order) => (
+        <input
+          type="checkbox"
+          checked={selected.includes(order.id)}
+          onChange={() => toggle(order.id)}
+        />
+      ),
+    },
+    { field: "externalOrderId", header: "Order #" },
+    {
+      field: "channel",
+      header: "Channel",
+      render: (order) => order.channel.name,
+    },
+    { field: "status", header: "Status" },
+    {
+      field: "totalAmount",
+      header: "Total",
+      render: (order) => `₹${order.totalAmount}`,
+      align: "right",
+    },
+    {
+      field: "createdAt",
+      header: "Created",
+      render: (order) => formatDateTime(order.createdAt),
+    },
+    {
+      field: "manage",
+      header: "Manage",
+      render: (order) => <Link href={`/orders/${order.id}`}>Manage</Link>,
+    },
+  ];
 
   return (
     <>
       {/* Bulk Actions */}
       <div style={{ marginBottom: 16 }}>
-        <button
-          disabled={selected.length === 0 || !allCreated}
+        <AppButton
+          disabled={selected.length === 0 || !allCreated || !canManage}
           onClick={() => {
             onBulkConfirm(selected);
             clearSelection();
           }}
         >
           Confirm Selected
-        </button>
+        </AppButton>
 
-        <button
-          disabled={selected.length === 0 || !allConfirmed}
+        <AppButton
+          disabled={selected.length === 0 || !allConfirmed || !canPackShip}
           onClick={() => {
             onBulkPack(selected);
             clearSelection();
@@ -88,10 +138,10 @@ export default function OrdersTable({
           style={{ marginLeft: 8 }}
         >
           Pack Selected
-        </button>
+        </AppButton>
 
-        <button
-          disabled={selected.length === 0 || !allPacked}
+        <AppButton
+          disabled={selected.length === 0 || !allPacked || !canPackShip}
           onClick={() => {
             onBulkShip(selected);
             clearSelection();
@@ -99,71 +149,22 @@ export default function OrdersTable({
           style={{ marginLeft: 8 }}
         >
           Ship Selected
-        </button>
+        </AppButton>
 
-        <button
-          disabled={selected.length === 0}
-          onClick={() => {
-            if (confirm("Are you sure you want to cancel selected orders?")) {
-              onBulkCancel(selected);
-              clearSelection();
-            }
+        <ConfirmButton
+          disabled={selected.length === 0 || !canManage}
+          message="Are you sure you want to cancel selected orders?"
+          onConfirm={() => {
+            onBulkCancel(selected);
+            clearSelection();
           }}
           style={{ marginLeft: 8 }}
         >
           Cancel Selected
-        </button>
+        </ConfirmButton>
       </div>
 
-      {/* Orders Table */}
-      <table
-        border={1}
-        cellPadding={8}
-        style={{ width: "100%", borderCollapse: "collapse" }}
-      >
-        <thead>
-          <tr>
-            <th>
-              <input
-                type="checkbox"
-                checked={
-                  selected.length > 0 &&
-                  selected.length === orders.length
-                }
-                onChange={toggleAll}
-              />
-            </th>
-            <th>Order #</th>
-            <th>Channel</th>
-            <th>Status</th>
-            <th>Total</th>
-            <th>Created</th>
-            <th>Manage</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {orders.map((order) => (
-            <tr key={order.id}>
-              <td>
-                <input
-                  type="checkbox"
-                  checked={selected.includes(order.id)}
-                  onChange={() => toggle(order.id)}
-                />
-              </td>
-              <td>{order.externalOrderId}</td>
-              <td>{order.channel.name}</td>
-              <td>{order.status}</td>
-              <td>₹{order.totalAmount}</td>
-              <td>{formatDateTime(order.createdAt)}</td>
-              <td>
-                <Link href={`/orders/${order.id}`}>Manage</Link>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <DataTable columns={columns} rows={orders} rowKey="id" />
     </>
   );
 }

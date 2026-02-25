@@ -8,8 +8,12 @@ import { revalidatePath } from "next/cache";
 import ProductForm from "@/features/merchant/components/ProductForm";
 import ProductList from "@/features/merchant/components/ProductList";
 import { getRequiredNumber, getRequiredString } from "@/lib/validation";
+import { requireRole } from "@/lib/auth";
+import { UserRole } from "@prisma/client";
 
 export default async function ProductsPage() {
+  await requireRole([UserRole.ADMIN, UserRole.MANAGER]);
+
   const productsRaw = await getProducts();
   const channelsRaw = await getChannels();
 
@@ -44,6 +48,7 @@ export default async function ProductsPage() {
     formData: FormData
   ) {
     "use server";
+    await requireRole([UserRole.ADMIN, UserRole.MANAGER]);
 
     const name = getRequiredString(formData, "name");
     const sku = getRequiredString(formData, "sku").toUpperCase();
@@ -77,6 +82,7 @@ export default async function ProductsPage() {
 
   async function increaseStock(formData: FormData) {
     "use server";
+    await requireRole([UserRole.ADMIN, UserRole.MANAGER]);
 
     const id = getRequiredString(formData, "id");
 
@@ -107,6 +113,7 @@ export default async function ProductsPage() {
 
   async function decreaseStock(formData: FormData) {
     "use server";
+    await requireRole([UserRole.ADMIN, UserRole.MANAGER]);
 
     const id = getRequiredString(formData, "id");
 

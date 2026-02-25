@@ -1,6 +1,9 @@
 import Link from "next/link";
+import { requireUser } from "@/lib/auth";
 
-export default function Home() {
+export default async function Home() {
+  const user = await requireUser();
+
   const buttonStyle: React.CSSProperties = {
     display: "block",
     width: "100%",
@@ -50,6 +53,12 @@ export default function Home() {
       <Link href="/dashboard" style={buttonStyle}>
         📊 Analytics Dashboard
       </Link>
+
+      {user.role === "ADMIN" && (
+        <Link href="/admin/users" style={buttonStyle}>
+          👥 User & Roles
+        </Link>
+      )}
     </div>
   );
 }

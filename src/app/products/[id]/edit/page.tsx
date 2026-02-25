@@ -3,16 +3,22 @@ import {
   updateProduct,
 } from "@/features/merchant/services/product.service";
 import { prisma } from "@/lib/prisma";
+import { requireRole } from "@/lib/auth";
 import { getRequiredNumber, getRequiredString } from "@/lib/validation";
-import { ProductStatus } from "@prisma/client";
+import { ProductStatus, UserRole } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import ConfirmButton from "@/components/ConfirmButton";
+import FloatingInput from "@/components/FloatingInput";
+import FloatingSelect from "@/components/FloatingSelect";
+import AppButton from "@/components/AppButton";
 
 export default async function ProductEditPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await requireRole([UserRole.ADMIN, UserRole.MANAGER]);
   const { id } = await params;
 
   const product = await prisma.product.findUnique({
@@ -26,6 +32,7 @@ export default async function ProductEditPage({
 
   async function saveProduct(formData: FormData) {
     "use server";
+    await requireRole([UserRole.ADMIN, UserRole.MANAGER]);
     const name = getRequiredString(formData, "name");
     const basePrice = getRequiredNumber(formData, "basePrice");
     const statusRaw = getRequiredString(formData, "status");
@@ -45,6 +52,7 @@ export default async function ProductEditPage({
 
   async function deleteProductAction() {
     "use server";
+    await requireRole([UserRole.ADMIN, UserRole.MANAGER]);
     await deleteProduct(id);
     revalidatePath("/products");
     redirect("/products");
@@ -52,6 +60,7 @@ export default async function ProductEditPage({
 
   async function archiveProductAction() {
     "use server";
+    await requireRole([UserRole.ADMIN, UserRole.MANAGER]);
     await updateProduct(id, {
       name: existingProduct.name,
       basePrice: existingProduct.basePrice,
@@ -69,39 +78,43 @@ export default async function ProductEditPage({
         {existingProduct.name} ({existingProduct.sku})
       </p>
 
-      <form action={saveProduct}>
-        <div style={{ marginBottom: 12 }}>
-          <label>Name</label>
-          <br />
-          <input name="name" defaultValue={existingProduct.name} style={{ width: "100%" }} />
-        </div>
-        <div style={{ marginBottom: 12 }}>
-          <label>Base Price</label>
-          <br />
-          <input
+      <form action={saveProduct} className="form-shell">
+        <div className="form-grid-single">
+          <FloatingInput name="name" label="Name" defaultValue={existingProduct.name} required />
+          <FloatingInput
             name="basePrice"
+            label="Base Price"
             type="number"
-            defaultValue={existingProduct.basePrice}
-            style={{ width: "100%" }}
+            defaultValue={String(existingProduct.basePrice)}
+            required
+          />
+          <FloatingSelect
+            name="status"
+            label="Status"
+            options={["ACTIVE", "INACTIVE"]}
+            defaultValue={existingProduct.status}
+            maxMenuHeight={120}
           />
         </div>
-        <div style={{ marginBottom: 12 }}>
-          <label>Status</label>
-          <br />
-          <select name="status" defaultValue={existingProduct.status}>
-            <option value="ACTIVE">ACTIVE</option>
-            <option value="INACTIVE">INACTIVE</option>
-          </select>
-        </div>
-        <button type="submit">Save</button>
+        <AppButton type="submit">Save</AppButton>
       </form>
 
       <div style={{ marginTop: 20, display: "flex", gap: 8 }}>
-        <form action={archiveProductAction}>
-          <button type="submit">Archive (Set Inactive)</button>
+        <form id="archive-product-form" action={archiveProductAction}>
+          <ConfirmButton
+            formId="archive-product-form"
+            message="Archive this product (set as inactive)?"
+          >
+            Archive (Set Inactive)
+          </ConfirmButton>
         </form>
-        <form action={deleteProductAction}>
-          <button type="submit">Delete Product</button>
+        <form id="delete-product-form" action={deleteProductAction}>
+          <ConfirmButton
+            formId="delete-product-form"
+            message="Delete this product permanently?"
+          >
+            Delete Product
+          </ConfirmButton>
         </form>
       </div>
     </div>

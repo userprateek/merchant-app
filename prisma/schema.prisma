@@ -43,6 +43,13 @@ enum ImageSourceType {
   LOCAL
 }
 
+enum UserRole {
+  ADMIN
+  MANAGER
+  PACKING_CREW
+  VIEWER
+}
+
 //
 // PRODUCT
 //
@@ -181,6 +188,8 @@ model Order {
   offerCode       String?
 
   status OrderStatus @default(CREATED)
+  customerCancelledAt DateTime?
+  warehouseReceivedAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -236,4 +245,30 @@ model InventoryMovement {
   createdAt DateTime              @default(now())
 
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  passwordSalt String
+  role         UserRole @default(VIEWER)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  sessions Session[]
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }

@@ -1,4 +1,5 @@
 "use client";
+import DataTable, { DataTableColumn } from "@/components/DataTable";
 
 type ChannelRow = {
   id: string;
@@ -9,32 +10,33 @@ type ChannelRow = {
 };
 
 export default function ChannelTable({ channels }: { channels: ChannelRow[] }) {
+  const columns: DataTableColumn<ChannelRow>[] = [
+    { field: "name", header: "Name" },
+    {
+      field: "baseUrl",
+      header: "Base URL",
+      render: (ch) => ch.baseUrl || "-",
+    },
+    {
+      field: "enabled",
+      header: "Enabled",
+      render: (ch) => (ch.isEnabled ? "YES" : "NO"),
+      align: "center",
+    },
+    {
+      field: "sandbox",
+      header: "Sandbox",
+      render: (ch) => (ch.isSandbox ? "YES" : "NO"),
+      align: "center",
+    },
+    {
+      field: "actions",
+      header: "Actions",
+      render: (ch) => <a href={`/channels/${ch.id}`}>Configure</a>,
+    },
+  ];
 
   return (
-    <table border={1} cellPadding={8} style={{ width: "100%" }}>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Base URL</th>
-          <th>Enabled</th>
-          <th>Sandbox</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-
-      <tbody>
-        {channels.map((ch) => (
-          <tr key={ch.id}>
-            <td>{ch.name}</td>
-            <td>{ch.baseUrl || "-"}</td>
-            <td>{ch.isEnabled ? "YES" : "NO"}</td>
-            <td>{ch.isSandbox ? "YES" : "NO"}</td>
-            <td>
-              <a href={`/channels/${ch.id}`}>Configure</a>
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
+    <DataTable columns={columns} rows={channels} rowKey="id" />
   );
 }

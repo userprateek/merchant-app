@@ -1,5 +1,7 @@
 "use client"
 
+import AppButton from "@/components/AppButton"
+
 export default function StockAdjuster({
   id,
   increase,
@@ -11,8 +13,8 @@ export default function StockAdjuster({
 }) {
   return (
     <div style={{ display: "flex", gap: 8 }}>
-      <button onClick={() => decrease(id)}>-</button>
-      <button onClick={() => increase(id)}>+</button>
+      <AppButton onClick={() => decrease(id)}>-</AppButton>
+      <AppButton onClick={() => increase(id)}>+</AppButton>
     </div>
   )
 }

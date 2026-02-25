@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { OrderStatus, InventoryMovementType } from "@prisma/client";
 import { canTransitionOrder } from "@/features/orders/transitions";
-import { dispatchIntegration } from "@/features/integrations/dispatcher";
+import { runChannelOperation } from "@/features/integrations/channel-operations";
 
 /*
 |--------------------------------------------------------------------------
@@ -20,7 +20,7 @@ export function canTransition(from: OrderStatus, to: OrderStatus) {
 */
 
 export async function confirmOrder(orderId: string) {
-  return prisma.$transaction(async (tx) => {
+  const confirmedOrder = await prisma.$transaction(async (tx) => {
     const order = await tx.order.findUnique({
       where: { id: orderId },
       include: { items: true },
@@ -75,8 +75,20 @@ export async function confirmOrder(orderId: string) {
       data: { status: "CONFIRMED" },
     });
 
-    return { success: true };
+    return order;
   });
+
+  try {
+    await runChannelOperation(confirmedOrder.channelId, "CONFIRM_ORDER", {
+      orderId: confirmedOrder.id,
+      externalOrderId: confirmedOrder.externalOrderId,
+      status: "CONFIRMED",
+    });
+  } catch {
+    // Integration log tracks failure; keep operational flow successful.
+  }
+
+  return { success: true };
 }
 
 /*
@@ -86,7 +98,7 @@ export async function confirmOrder(orderId: string) {
 */
 
 export async function cancelOrder(orderId: string) {
-  return prisma.$transaction(async (tx) => {
+  const cancelledOrder = await prisma.$transaction(async (tx) => {
     const order = await tx.order.findUnique({
       where: { id: orderId },
       include: { items: true },
@@ -125,8 +137,20 @@ export async function cancelOrder(orderId: string) {
       data: { status: "CANCELLED" },
     });
 
-    return { success: true };
+    return order;
   });
+
+  try {
+    await runChannelOperation(cancelledOrder.channelId, "CANCEL_ORDER", {
+      orderId: cancelledOrder.id,
+      externalOrderId: cancelledOrder.externalOrderId,
+      status: "CANCELLED",
+    });
+  } catch {
+    // Integration log tracks failure; keep operational flow successful.
+  }
+
+  return { success: true };
 }
 
 /*
@@ -155,7 +179,7 @@ export async function shipOrder(orderId: string) {
   });
 
   try {
-    await dispatchIntegration(shippedOrder.channelId, "SHIP_ORDER", {
+    await runChannelOperation(shippedOrder.channelId, "SHIP_ORDER", {
       orderId: shippedOrder.id,
       externalOrderId: shippedOrder.externalOrderId,
       status: "SHIPPED",
@@ -174,7 +198,7 @@ export async function shipOrder(orderId: string) {
 */
 
 export async function packOrder(orderId: string) {
-  return prisma.$transaction(async (tx) => {
+  const packedOrder = await prisma.$transaction(async (tx) => {
     const order = await tx.order.findUnique({
       where: { id: orderId },
     });
@@ -189,8 +213,21 @@ export async function packOrder(orderId: string) {
       data: { status: "PACKED" },
     });
 
-    return { success: true };
+    return order;
   });
+
+  try {
+    await runChannelOperation(packedOrder.channelId, "PACK_ORDER", {
+      orderId: packedOrder.id,
+      externalOrderId: packedOrder.externalOrderId,
+      status: "PACKED",
+      readyToShip: true,
+    });
+  } catch {
+    // Integration log tracks failure; keep operational flow successful.
+  }
+
+  return { success: true };
 }
 
 /*
@@ -200,7 +237,7 @@ export async function packOrder(orderId: string) {
 */
 
 export async function returnOrder(orderId: string) {
-  return prisma.$transaction(async (tx) => {
+  const returnedOrder = await prisma.$transaction(async (tx) => {
     const order = await tx.order.findUnique({
       where: { id: orderId },
       include: { items: true },
@@ -240,7 +277,43 @@ export async function returnOrder(orderId: string) {
       data: { status: "RETURNED" },
     });
 
-    return { success: true };
+    return order;
+  });
+
+  try {
+    await runChannelOperation(returnedOrder.channelId, "RETURN_ORDER", {
+      orderId: returnedOrder.id,
+      externalOrderId: returnedOrder.externalOrderId,
+      status: "RETURNED",
+    });
+  } catch {
+    // Integration log tracks failure; keep operational flow successful.
+  }
+
+  return { success: true };
+}
+
+export async function generateShippingLabel(orderId: string) {
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+  });
+  if (!order) throw new Error("ORDER_NOT_FOUND");
+
+  return runChannelOperation(order.channelId, "GENERATE_SHIPPING_LABEL", {
+    orderId: order.id,
+    externalOrderId: order.externalOrderId,
+  });
+}
+
+export async function generateInvoice(orderId: string) {
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+  });
+  if (!order) throw new Error("ORDER_NOT_FOUND");
+
+  return runChannelOperation(order.channelId, "GENERATE_INVOICE", {
+    orderId: order.id,
+    externalOrderId: order.externalOrderId,
   });
 }
 

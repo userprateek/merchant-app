@@ -3,16 +3,30 @@ import { revalidatePath } from "next/cache";
 import {
   cancelOrder,
   confirmOrder,
+  generateInvoice,
+  generateShippingLabel,
+  returnOrder,
   packOrder,
   shipOrder,
 } from "@/features/orders/service";
 import { formatDateTime } from "@/lib/time";
+import { requireRole } from "@/lib/auth";
+import { UserRole } from "@prisma/client";
+import { markOrderReturnedToWarehouseById } from "@/features/orders/channel-events.service";
+import ConfirmButton from "@/components/ConfirmButton";
+import DataTable, { DataTableColumn } from "@/components/DataTable";
 
 export default async function OrderDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const user = await requireRole([
+    UserRole.ADMIN,
+    UserRole.MANAGER,
+    UserRole.PACKING_CREW,
+  ]);
+
   const { id } = await params;
 
   const order = await prisma.order.findUnique({
@@ -29,15 +43,37 @@ export default async function OrderDetailPage({
     return <div>Order not found</div>;
   }
   const orderId = order.id;
+  const itemColumns: DataTableColumn<(typeof order.items)[number]>[] = [
+    {
+      field: "product",
+      header: "Product",
+      render: (item) => item.product.name,
+    },
+    { field: "quantity", header: "Qty", align: "right" },
+    {
+      field: "unitPrice",
+      header: "Unit Price",
+      align: "right",
+      render: (item) => `₹${item.unitPrice}`,
+    },
+    {
+      field: "totalPrice",
+      header: "Total",
+      align: "right",
+      render: (item) => `₹${item.totalPrice}`,
+    },
+  ];
 
   async function confirmAction() {
     "use server";
+    await requireRole([UserRole.ADMIN, UserRole.MANAGER]);
     await confirmOrder(orderId);
     revalidatePath(`/orders/${orderId}`);
   }
 
   async function cancelAction() {
     "use server";
+    await requireRole([UserRole.ADMIN, UserRole.MANAGER]);
     await cancelOrder(orderId);
 
     revalidatePath(`/orders/${orderId}`);
@@ -45,6 +81,7 @@ export default async function OrderDetailPage({
 
   async function shipAction() {
     "use server";
+    await requireRole([UserRole.ADMIN, UserRole.MANAGER, UserRole.PACKING_CREW]);
     await shipOrder(orderId);
 
     revalidatePath(`/orders/${orderId}`);
@@ -52,8 +89,38 @@ export default async function OrderDetailPage({
 
   async function packAction() {
     "use server";
+    await requireRole([UserRole.ADMIN, UserRole.MANAGER, UserRole.PACKING_CREW]);
     await packOrder(orderId);
 
+    revalidatePath(`/orders/${orderId}`);
+  }
+
+  async function generateShippingLabelAction() {
+    "use server";
+    await requireRole([UserRole.ADMIN, UserRole.MANAGER, UserRole.PACKING_CREW]);
+    await generateShippingLabel(orderId);
+    revalidatePath("/integrations");
+  }
+
+  async function generateInvoiceAction() {
+    "use server";
+    await requireRole([UserRole.ADMIN, UserRole.MANAGER, UserRole.PACKING_CREW]);
+    await generateInvoice(orderId);
+    revalidatePath("/integrations");
+  }
+
+  async function markWarehouseReceivedAction() {
+    "use server";
+    await requireRole([UserRole.ADMIN, UserRole.MANAGER, UserRole.PACKING_CREW]);
+    await markOrderReturnedToWarehouseById(orderId);
+    revalidatePath(`/orders/${orderId}`);
+    revalidatePath("/orders");
+  }
+
+  async function returnAction() {
+    "use server";
+    await requireRole([UserRole.ADMIN, UserRole.MANAGER]);
+    await returnOrder(orderId);
     revalidatePath(`/orders/${orderId}`);
   }
 
@@ -66,54 +133,98 @@ export default async function OrderDetailPage({
       <p>Status: <strong>{order.status}</strong></p>
       <p>Total: ₹{order.totalAmount}</p>
       <p>Created: {formatDateTime(order.createdAt)}</p>
+      <p>
+        Customer Cancelled At:{" "}
+        <strong>{order.customerCancelledAt ? formatDateTime(order.customerCancelledAt) : "-"}</strong>
+      </p>
+      <p>
+        Returned To Warehouse At:{" "}
+        <strong>{order.warehouseReceivedAt ? formatDateTime(order.warehouseReceivedAt) : "-"}</strong>
+      </p>
 
       <h3>Items</h3>
-
-      <table border={1} cellPadding={8}>
-        <thead>
-          <tr>
-            <th>Product</th>
-            <th>Qty</th>
-            <th>Unit Price</th>
-            <th>Total</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {order.items.map((item) => (
-            <tr key={item.id}>
-              <td>{item.product.name}</td>
-              <td>{item.quantity}</td>
-              <td>₹{item.unitPrice}</td>
-              <td>₹{item.totalPrice}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <DataTable columns={itemColumns} rows={order.items} rowKey="id" />
 
       <div style={{ marginTop: 20 }}>
-        {order.status === "CREATED" && (
-          <form action={confirmAction}>
-            <button type="submit">Confirm</button>
+        {(user.role === "ADMIN" || user.role === "MANAGER" || user.role === "PACKING_CREW") && (
+          <div style={{ marginBottom: 10, display: "flex", gap: 8 }}>
+            <form id="generate-shipping-label-form" action={generateShippingLabelAction}>
+              <ConfirmButton
+                formId="generate-shipping-label-form"
+                message="Generate shipping label for this order?"
+              >
+                Generate Shipping Label
+              </ConfirmButton>
+            </form>
+            <form id="generate-invoice-form" action={generateInvoiceAction}>
+              <ConfirmButton
+                formId="generate-invoice-form"
+                message="Generate invoice for this order?"
+              >
+                Generate Invoice
+              </ConfirmButton>
+            </form>
+            {(order.customerCancelledAt || order.status === "SHIPPED") && (
+              <form id="warehouse-received-form" action={markWarehouseReceivedAction}>
+                <ConfirmButton
+                  formId="warehouse-received-form"
+                  message="Mark this order as returned to warehouse?"
+                >
+                  Mark Returned To Warehouse
+                </ConfirmButton>
+              </form>
+            )}
+          </div>
+        )}
+
+        {order.status === "CREATED" && (user.role === "ADMIN" || user.role === "MANAGER") && (
+          <form id="confirm-order-form" action={confirmAction}>
+            <ConfirmButton formId="confirm-order-form" message="Confirm this order?">
+              Confirm
+            </ConfirmButton>
           </form>
         )}
 
-        {order.status === "CONFIRMED" && (
-          <form action={packAction}>
-            <button type="submit">Mark as Packed</button>
+        {order.status === "CONFIRMED" &&
+          (user.role === "ADMIN" || user.role === "MANAGER" || user.role === "PACKING_CREW") && (
+          <form id="pack-order-form" action={packAction}>
+            <ConfirmButton formId="pack-order-form" message="Mark this order as packed?">
+              Mark as Packed
+            </ConfirmButton>
           </form>
         )}
 
-        {order.status === "PACKED" && (
-          <form action={shipAction}>
-            <button type="submit">Mark as Shipped</button>
+        {order.status === "PACKED" &&
+          (user.role === "ADMIN" || user.role === "MANAGER" || user.role === "PACKING_CREW") && (
+          <form id="ship-order-form" action={shipAction}>
+            <ConfirmButton formId="ship-order-form" message="Mark this order as shipped?">
+              Mark as Shipped
+            </ConfirmButton>
           </form>
         )}
 
         {order.status !== "SHIPPED" &&
-          order.status !== "CANCELLED" && (
-            <form action={cancelAction}>
-              <button type="submit">Cancel</button>
+          order.status !== "CANCELLED" &&
+          (user.role === "ADMIN" || user.role === "MANAGER") && (
+            <form id="cancel-order-form" action={cancelAction}>
+              <ConfirmButton
+                formId="cancel-order-form"
+                message="Cancel this order? Reserved stock will be released."
+              >
+                Cancel
+              </ConfirmButton>
+            </form>
+          )}
+
+        {order.status === "SHIPPED" &&
+          (user.role === "ADMIN" || user.role === "MANAGER") && (
+            <form id="return-order-form" action={returnAction}>
+              <ConfirmButton
+                formId="return-order-form"
+                message="Mark this order as returned? Stock adjustments will be applied."
+              >
+                Mark as Returned
+              </ConfirmButton>
             </form>
           )}
       </div>

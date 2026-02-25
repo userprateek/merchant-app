@@ -1,6 +1,16 @@
 import { prisma } from "@/lib/prisma";
+import { requireRole } from "@/lib/auth";
+import { UserRole } from "@prisma/client";
+import DataTable, { DataTableColumn } from "@/components/DataTable";
 
 export default async function DashboardPage() {
+  await requireRole([
+    UserRole.ADMIN,
+    UserRole.MANAGER,
+    UserRole.PACKING_CREW,
+    UserRole.VIEWER,
+  ]);
+
   const [
     totalProducts,
     totalOrders,
@@ -27,6 +37,18 @@ export default async function DashboardPage() {
   const lowStockProducts = lowStockCandidates.filter(
     (product) => product.totalStock <= 5 || product.totalStock <= product.reservedStock
   );
+  const lowStockColumns: DataTableColumn<(typeof lowStockProducts)[number]>[] = [
+    { field: "sku", header: "SKU" },
+    { field: "name", header: "Name" },
+    { field: "totalStock", header: "Total", align: "right" },
+    { field: "reservedStock", header: "Reserved", align: "right" },
+    {
+      field: "available",
+      header: "Available",
+      align: "right",
+      render: (product) => product.totalStock - product.reservedStock,
+    },
+  ];
 
   return (
     <div style={{ padding: 24 }}>
@@ -57,33 +79,12 @@ export default async function DashboardPage() {
       </ul>
 
       <h2 style={{ marginTop: 24 }}>Low Stock / At Risk</h2>
-      <table border={1} cellPadding={8} style={{ borderCollapse: "collapse" }}>
-        <thead>
-          <tr>
-            <th>SKU</th>
-            <th>Name</th>
-            <th>Total</th>
-            <th>Reserved</th>
-            <th>Available</th>
-          </tr>
-        </thead>
-        <tbody>
-          {lowStockProducts.map((product) => (
-            <tr key={product.id}>
-              <td>{product.sku}</td>
-              <td>{product.name}</td>
-              <td>{product.totalStock}</td>
-              <td>{product.reservedStock}</td>
-              <td>{product.totalStock - product.reservedStock}</td>
-            </tr>
-          ))}
-          {lowStockProducts.length === 0 && (
-            <tr>
-              <td colSpan={5}>No low-stock products.</td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+      <DataTable
+        columns={lowStockColumns}
+        rows={lowStockProducts}
+        rowKey="id"
+        emptyMessage="No low-stock products."
+      />
     </div>
   );
 }

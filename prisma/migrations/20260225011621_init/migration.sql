@@ -14,6 +14,9 @@ CREATE TYPE "OversellPolicy" AS ENUM ('REJECT', 'ALLOW', 'LIMITED');
 CREATE TYPE "ImageSourceType" AS ENUM ('URL', 'LOCAL');
 
 -- CreateEnum
+CREATE TYPE "UserRole" AS ENUM ('ADMIN', 'MANAGER', 'PACKING_CREW', 'VIEWER');
+
+-- CreateEnum
 CREATE TYPE "InventoryMovementType" AS ENUM ('CONFIRM', 'CANCEL', 'RETURN', 'MANUAL_ADJUST');
 
 -- CreateTable
@@ -106,6 +109,8 @@ CREATE TABLE "Order" (
     "discountAmount" DOUBLE PRECISION,
     "offerCode" TEXT,
     "status" "OrderStatus" NOT NULL DEFAULT 'CREATED',
+    "customerCancelledAt" TIMESTAMP(3),
+    "warehouseReceivedAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -149,6 +154,32 @@ CREATE TABLE "InventoryMovement" (
     CONSTRAINT "InventoryMovement_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "User" (
+    "id" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "passwordHash" TEXT NOT NULL,
+    "passwordSalt" TEXT NOT NULL,
+    "role" "UserRole" NOT NULL DEFAULT 'VIEWER',
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "User_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Session" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "tokenHash" TEXT NOT NULL,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Session_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "Product_sku_key" ON "Product"("sku");
 
@@ -160,6 +191,15 @@ CREATE UNIQUE INDEX "ChannelListing_productId_channelId_key" ON "ChannelListing"
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Order_channelId_externalOrderId_key" ON "Order"("channelId", "externalOrderId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Session_tokenHash_key" ON "Session"("tokenHash");
+
+-- CreateIndex
+CREATE INDEX "Session_userId_idx" ON "Session"("userId");
 
 -- AddForeignKey
 ALTER TABLE "ProductImage" ADD CONSTRAINT "ProductImage_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -187,3 +227,6 @@ ALTER TABLE "IntegrationLog" ADD CONSTRAINT "IntegrationLog_channelId_fkey" FORE
 
 -- AddForeignKey
 ALTER TABLE "InventoryMovement" ADD CONSTRAINT "InventoryMovement_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Session" ADD CONSTRAINT "Session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
