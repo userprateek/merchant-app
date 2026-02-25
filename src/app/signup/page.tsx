@@ -1,6 +1,7 @@
 import { createViewerSignupAccount, loginWithPassword } from "@/lib/auth";
 import { getRequiredString } from "@/lib/validation";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import FloatingInput from "@/components/FloatingInput";
 import AppButton from "@/components/AppButton";
 import SignupErrorModalBridge from "@/app/signup/SignupErrorModalBridge";
@@ -29,7 +30,9 @@ export default function SignupPage() {
 
   return (
     <div className="app-shell app-shell--narrow">
-      <SignupErrorModalBridge />
+      <Suspense fallback={null}>
+        <SignupErrorModalBridge />
+      </Suspense>
       <div className="page-header">
         <h1 className="page-title">Create Account</h1>
         <p className="page-subtitle">Self-signup users are created with VIEWER role.</p>

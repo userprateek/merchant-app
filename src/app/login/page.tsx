@@ -2,6 +2,7 @@ import { loginWithPassword } from "@/lib/auth";
 import { getRequiredString } from "@/lib/validation";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import FloatingInput from "@/components/FloatingInput";
 import AppButton from "@/components/AppButton";
 import LoginErrorModalBridge from "@/app/login/LoginErrorModalBridge";
@@ -24,7 +25,9 @@ export default function LoginPage() {
 
   return (
     <div className="app-shell app-shell--narrow">
-      <LoginErrorModalBridge />
+      <Suspense fallback={null}>
+        <LoginErrorModalBridge />
+      </Suspense>
       <div className="page-header">
         <h1 className="page-title">Login</h1>
       </div>
